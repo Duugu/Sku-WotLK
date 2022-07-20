@@ -36,5 +36,3 @@ jobs:
       # for the Burning Crusade Classic version of the game and doesn't upload to WoWInterface
       - name: Package and release for Burning Crusade Classic
         uses: BigWigsMods/packager@v1
-        with:
-          args: -g bcc
