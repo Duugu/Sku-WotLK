@@ -470,7 +470,7 @@ function SkuQuest:GetTTSText(aQuestID)
 		--table.insert(tSections, "numObjectives: "..numObjectives)
 
 		for i=1, numObjectives, 1 do
-			local string = _G["QuestLogObjective"..i]
+			local string = _G["QuestInfoObjective"..i]
 			local text
 			local ttype
 			local finished
@@ -520,11 +520,11 @@ function SkuQuest:GetTTSText(aQuestID)
 			tTtipText = tTtipText..L["\r\nFeste Gegenstände\r\n"]
 			for i=1, numRewards, 1 do
 				local link
-				local tQuestLogItem = _G["QuestLogItem"..i]
+				local tQuestLogItem = _G["QuestInfoRewardsFrameQuestInfoItem"..i]
 
-				if (tQuestLogItem.rewardType == "item") then
+				if (tQuestLogItem.objectType == "item") then
 					link = GetQuestLogItemLink(tQuestLogItem.type, tQuestLogItem:GetID())
-				elseif (self.rewardType== "spell") then
+				elseif (self.objectType== "spell") then
 					link = GetQuestLogSpellLink(tQuestLogItem:GetID())
 				end
 				if link then
@@ -544,7 +544,7 @@ function SkuQuest:GetTTSText(aQuestID)
 							if region and region:GetObjectType() == "FontString" then
 								local text = region:GetText() -- string or nil
 								if text then
-									if text == _G["QuestLogItem"..i.."Name"]:GetText() then
+									if text == _G["QuestInfoRewardsFrameQuestInfoItem"..i.."Name"]:GetText() then
 										tTtipText = tTtipText..i..": "..text.."\r\n"
 										tTtipText = tTtipText..itemRarity.."\r\n"
 									else
@@ -564,13 +564,14 @@ function SkuQuest:GetTTSText(aQuestID)
 			tTtipText = tTtipText..L["\r\nGegenstände zur Auswahl\r\n"]
 			for i=1, numChoices, 1 do
 				local link
-				local tQuestLogItem = _G["QuestLogItem"..i]
-
-				if (tQuestLogItem.rewardType == "item") then
+				local tQuestLogItem = _G["QuestInfoRewardsFrameQuestInfoItem"..i]
+print(tQuestLogItem.objectType)
+				if (tQuestLogItem.objectType == "item") then
 					link = GetQuestLogItemLink(tQuestLogItem.type, tQuestLogItem:GetID())
-				elseif (self.rewardType== "spell") then
+				elseif (self.objectType== "spell") then
 					link = GetQuestLogSpellLink(tQuestLogItem:GetID())
 				end
+				print(i, link)
 				if link then
 					local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, itemSellPrice =  GetItemInfo(link) --GetItemInfo(itemID or "itemString" or "itemName" or "itemLink")						
 					itemEquipLoc = _G[itemEquipLoc]
@@ -588,7 +589,7 @@ function SkuQuest:GetTTSText(aQuestID)
 							if region and region:GetObjectType() == "FontString" then
 								local text = region:GetText() -- string or nil
 								if text then
-									if text == _G["QuestLogItem"..i.."Name"]:GetText() then
+									if text == _G["QuestInfoRewardsFrameQuestInfoItem"..i.."Name"]:GetText() then
 										tTtipText = tTtipText..i..": "..text.."\r\n"
 										tTtipText = tTtipText..itemRarity.."\r\n"
 									else
@@ -767,11 +768,11 @@ function SkuQuest:ShowForTTS(aQuestID)
 			tTtipText = tTtipText..L["\r\nFeste Gegenstände\r\n"]
 			for i=1, numRewards, 1 do
 				local link
-				local tQuestLogItem = _G["QuestLogItem"..i]
+				local tQuestLogItem = _G["QuestInfoRewardsFrameQuestInfoItem"..i]
 
-				if (tQuestLogItem.rewardType == "item") then
+				if (tQuestLogItem.objectType == "item") then
 					link = GetQuestLogItemLink(tQuestLogItem.type, tQuestLogItem:GetID())
-				elseif (self.rewardType== "spell") then
+				elseif (self.objectType== "spell") then
 					link = GetQuestLogSpellLink(tQuestLogItem:GetID())
 				end
 				if link then
@@ -791,7 +792,7 @@ function SkuQuest:ShowForTTS(aQuestID)
 							if region and region:GetObjectType() == "FontString" then
 								local text = region:GetText() -- string or nil
 								if text then
-									if text == _G["QuestLogItem"..i.."Name"]:GetText() then
+									if text == _G["QuestInfoRewardsFrameQuestInfoItem"..i.."Name"]:GetText() then
 										tTtipText = tTtipText..i..": "..text.."\r\n"
 										tTtipText = tTtipText..itemRarity.."\r\n"
 									else
@@ -811,11 +812,11 @@ function SkuQuest:ShowForTTS(aQuestID)
 			tTtipText = tTtipText..L["\r\nGegenstände zur Auswahl\r\n"]
 			for i=1, numChoices, 1 do
 				local link
-				local tQuestLogItem = _G["QuestLogItem"..i]
+				local tQuestLogItem = _G["QuestInfoRewardsFrameQuestInfoItem"..i]
 
-				if (tQuestLogItem.rewardType == "item") then
+				if (tQuestLogItem.objectType == "item") then
 					link = GetQuestLogItemLink(tQuestLogItem.type, tQuestLogItem:GetID())
-				elseif (self.rewardType== "spell") then
+				elseif (self.objectType== "spell") then
 					link = GetQuestLogSpellLink(tQuestLogItem:GetID())
 				end
 				if link then
@@ -835,7 +836,7 @@ function SkuQuest:ShowForTTS(aQuestID)
 							if region and region:GetObjectType() == "FontString" then
 								local text = region:GetText() -- string or nil
 								if text then
-									if text == _G["QuestLogItem"..i.."Name"]:GetText() then
+									if text == _G["QuestInfoRewardsFrameQuestInfoItem"..i.."Name"]:GetText() then
 										tTtipText = tTtipText..i..": "..text.."\r\n"
 										tTtipText = tTtipText..itemRarity.."\r\n"
 									else

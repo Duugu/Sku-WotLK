@@ -67,6 +67,7 @@ SkuOptions.options = {
 				return SkuOptions.db.profile[MODULE_NAME].localActive
 			end
 		},
+		--[[
 		useBlizzTtsInMenu = {
 			order = 6,
 			name = L["Use Blizzard TTS for audio menu"],
@@ -79,6 +80,7 @@ SkuOptions.options = {
 				return SkuOptions.db.profile[MODULE_NAME].useBlizzTtsInMenu
 			end
 		},
+		]]
 		soundChannels={
 			name = L["Audio-Kanäle"],
 			type = "group",
@@ -264,7 +266,7 @@ SkuOptions.defaults = {
 	backgroundSound = "silence.mp3",
 	localActive = true,
 	visualAudioMenu = false,
-	useBlizzTtsInMenu = false,
+	--useBlizzTtsInMenu = false,
 	allModules  = {
 		MenuQuickSelect1 = L["SkuNav,Wegpunkt,Auswählen,Aktuelle Karte Entfernung"],
 		MenuQuickSelect2 = L["SkuNav,Route,Route folgen,Ziele Entfernung"],
@@ -289,6 +291,7 @@ SkuOptions.defaults = {
 function SkuOptions:MenuBuilder(aParentEntry)
 	--dprint("SkuOptions:MenuBuilder", aParentEntry)
 	local tNewMenuEntry =  SkuOptions:InjectMenuItems(aParentEntry, {L["Options"]}, SkuGenericMenuItem)
+	tNewMenuEntry.filterable = true
 	SkuOptions:IterateOptionsArgs(SkuOptions.options.args, tNewMenuEntry, SkuOptions.db.profile[MODULE_NAME])
 
 	local tNewMenuParentEntry =  SkuOptions:InjectMenuItems(tNewMenuEntry, {L["Profil"]}, SkuGenericMenuItem)

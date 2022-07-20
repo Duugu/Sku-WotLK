@@ -91,7 +91,7 @@ SkuStatus = {
 
 SkuCore.interactFramesListHooked = {}
 SkuCore.interactFramesListManual = {
-	["BagnonInventoryFrame1"] = function(...) SkuCore:Build_BagnonInventoryFrame(...) end,
+	["ContainerFrame1"] = function(...) SkuCore:Build_BagnonInventoryFrame(...) end,
 	--["BagnonBankFrame1"] = function(...) SkuCore:Build_BagnonBankFrame(...) end,
 	--["BagnonGuildFrame1"] = function(...) SkuCore:Build_BagnonGuildFrame(...) end,
 	["CraftFrame"] = function(...) SkuCore:Build_CraftFrame(...) end,
@@ -100,6 +100,8 @@ SkuCore.interactFramesListManual = {
 	["GossipFrame"] = function(...) SkuCore:GossipFrame(...) end,
 	["QuestFrame"] = function(...) SkuCore:QuestFrame(...) end,
 	["ItemTextFrame"] = function(...) SkuCore:ItemTextFrame(...) end,
+	["ClassTrainerFrame"] = function(...) SkuCore:Build_ClassTrainerFrame(...) end,
+	["CharacterFrame"] = function(...) SkuCore:Build_CharacterFrame(...) end,
 }
 
 SkuCore.interactFramesList = {
@@ -113,11 +115,11 @@ SkuCore.interactFramesList = {
 	"StaticPopup3",
 	"PetStableFrame",
 	"ContainerFrame1",
-	"ContainerFrame2",
-	"ContainerFrame3",
-	"ContainerFrame4",
-	"ContainerFrame5",
-	"ContainerFrame6",
+	--"ContainerFrame2",
+	--"ContainerFrame3",
+	--"ContainerFrame4",
+	--"ContainerFrame5",
+	--"ContainerFrame6",
 	"DropDownList1",
 	"TalentFrame",
 	--"AuctionFrame",
@@ -128,8 +130,8 @@ SkuCore.interactFramesList = {
 	"HonorFrame",
 	"PlayerTalentFrame",
 	"InspectFrame",
-	"BagnonInventoryFrame1",
-	"BagnonBankFrame1",
+	--"BagnonInventoryFrame1",
+	--"BagnonBankFrame1",
 	"GuildBankFrame",
 	"BankFrame",
 	"CraftFrame",
@@ -144,7 +146,7 @@ SkuCore.interactFramesList = {
 	--"MultiBarRight",
 	--"MultiBarBottomLeft",
 	--"MultiBarBottomRight",
-	"BagnonGuildFrame1",
+	--"BagnonGuildFrame1",
 	--"MainMenuBar",
 	"ReadyCheckFrame",
 	"ItemSocketingFrame",
@@ -590,9 +592,6 @@ function SkuCore:NAME_PLATE_UNIT_ADDED(aEvent, aPlateName) --aPlateName is the u
 				local tFramePlateFrame = SkuCore:GetNamePlateFrameForUnit(aPlateName)
 				if tFramePlateFrame then
 					--SkuOptions.Voice:OutputString(string.sub(aPlateName, 10, string.len(aPlateName))..";"..tMaxRange, false, true, 0.2)
-					--local tFile = SkuAudioFileIndex[string.sub(aPlateName, 10, string.len(aPlateName))]
-					--local willPlay, soundHandle = PlaySoundFile("Interface\\AddOns\\"..Sku.AudiodataPath.."\\assets\\audio\\"..tFile, SkuOptions.db.profile["SkuOptions"].soundChannels.SkuChannel or "Talking Head")
-					--local willPlay, soundHandle = PlaySoundFile("Interface\\AddOns\\Sku\\SkuCore\\assets\\audio\\plate_in.mp3", SkuOptions.db.profile["SkuOptions"].soundChannels.SkuChannel or "Talking Head")
 
 					if tFramePlateFrame.UnitFrame then
 						if not tFramePlateFrame.UnitFrame.SkuPlate then
@@ -664,9 +663,6 @@ function SkuCore:NAME_PLATE_UNIT_REMOVED(aEvent, aPlateName)
 	-- NAMEPLATE TEST -->
 	if Sku.testMode == true then
 		--print("NAME_PLATE_UNIT_REMOVED", aPlateName, UnitName(aPlateName))
-		--local tFile = SkuAudioFileIndex[string.sub(aPlateName, 10, string.len(aPlateName))]
-		--local willPlay, soundHandle = PlaySoundFile("Interface\\AddOns\\"..Sku.AudiodataPath.."\\assets\\audio\\"..tFile, SkuOptions.db.profile["SkuOptions"].soundChannels.SkuChannel or "Talking Head")
-		--local willPlay, soundHandle = PlaySoundFile("Interface\\AddOns\\Sku\\SkuCore\\assets\\audio\\plate_out.mp3", SkuOptions.db.profile["SkuOptions"].soundChannels.SkuChannel or "Talking Head")
 
 		local tName = UnitName(aPlateName)
 		if tName then
@@ -1443,8 +1439,8 @@ end
 
 ---------------------------------------------------------------------------------------------------------------------------------------
 local function splitString(aString)
-	--dprint("split:", aString, SkuAudioFileIndex[aString])
-	if SkuAudioFileIndex[aString] then
+	--dprint("split:", aString, SkuAudioFileIndex[Sku.Loc][aString])
+	if SkuAudioFileIndex[Sku.Loc][aString] then
 		return aString
 	end
 	if aString == nil then
@@ -1636,6 +1632,9 @@ end
 function SkuCore:CheckInteractObjectShow()
 	--print("CheckInteractObjectShow", SkuCore.noMouseOverNotification)
 	--tSkuCoreTooltipCheckerControlPrevOpac = 1
+	if SkuOptions:IsMenuOpen() == true then
+		return
+	end
 	if SkuCore.noMouseOverNotification ~= true then
 		if not GameTooltipTextLeft1.GetText then
 			return
@@ -1644,16 +1643,22 @@ function SkuCore:CheckInteractObjectShow()
 		if not tFirstLine or tFirstLine == "" then
 			return
 		end
+		if SkuOptions.db.profile[MODULE_NAME].readAllTooltips == true then
+			SkuOptions.Voice:OutputStringBTtts(tFirstLine, true, true, 0.2, nil, nil, nil, 2)
+			C_Timer.After(0.1, function() GameTooltip:Hide() end)
+			return
+		end
+
 		for i, v in pairs(SkuDB.objectLookup[Sku.Loc]) do
 			if v == tFirstLine then
 				--SkuCore.CheckInteractObjectShowIsShown = true
 				--print("show", tFirstLine)
-				SkuOptions.Voice:OutputString(tFirstLine..";"..L["cursor;on"]..";"..L["OBJECT"], true, true, 0.2)
+				SkuOptions.Voice:OutputStringBTtts(tFirstLine..";"..L["cursor;on"]..";"..L["OBJECT"], true, true, 0.2, true, nil, nil, 2)
 				break
 			end
 		end
 	end
-	C_Timer.After(0.1, function() GameTooltip:Hide() end)
+	--C_Timer.After(0.1, function() GameTooltip:Hide() end)
 end
 
 ---------------------------------------------------------------------------------------------------------------------------------------
@@ -2195,12 +2200,12 @@ local friendlyFrameNames = {
 	["StaticPopup3"] = L["Popup 3"],
 	["PetStableFrame"] = L["Pet Stable"],
 	["MailFrame"] = L["Mail"],
-	["ContainerFrame1"] = L["Bag 1"],
-	["ContainerFrame2"] = L["Bag 2"],
-	["ContainerFrame3"] = L["Bag 3"],
-	["ContainerFrame4"] = L["Bag 4"],
-	["ContainerFrame5"] = L["Bag 5"],
-	["ContainerFrame6"] = L["Bag 6"],
+	["ContainerFrame1"] = L["local Bags"] ,
+	--["ContainerFrame2"] = L["Bag 2"],
+	--["ContainerFrame3"] = L["Bag 3"],
+	--["ContainerFrame4"] = L["Bag 4"],
+	--["ContainerFrame5"] = L["Bag 5"],
+	--["ContainerFrame6"] = L["Bag 6"],
 	["DropDownList2"] = L["Dropdown List 2"],
 	["DropDownList1"] = L["Dropdown List 1"],
 	["TalentFrame"] = L["Talents"],
@@ -2211,7 +2216,7 @@ local friendlyFrameNames = {
 	["ReputationFrame"] = L["Reputation"],
 	["SkillFrame"] = L["Skills"],
 	["HonorFrame"] = L["Honor"],
-	["BagnonInventoryFrame1"] = L["Bagnon Taschen"],
+	--["BagnonInventoryFrame1"] = L["Bagnon Taschen"],
 	["SpellBookFrame"] = L["Spellbook"],
 	["PlayerTalentFrame"] = L["Talents"],
 	["FriendsFrame"] = L["Friends"],
@@ -2222,8 +2227,8 @@ local friendlyFrameNames = {
 	--["MultiBarRight"] = "",
 	--["MultiBarBottomLeft"] = "",
 	--["MultiBarBottomRight"] = "",
-	["BagnonGuildFrame1"] = L["Bagnon Guild"],
-	["BagnonBankFrame1"] = L["Bagnon Bank"],
+	--["BagnonGuildFrame1"] = L["Bagnon Guild"],
+	--["BagnonBankFrame1"] = L["Bagnon Bank"],
 	["BankFrame"] = L["Bank"],
 	["GuildBankFrame"] = L["Guild Bank"],
 	["TradeSkillFrame"] = L["Trade skill"],
@@ -2231,16 +2236,18 @@ local friendlyFrameNames = {
 	["ItemSocketingFrame"] = L["Socketing"],
 	[""] = "",
 }
+--[[
 local containerFrames = {
-	["BagnonInventoryFrame1"] = "BagnonInventoryFrame1",
-	["BagnonBankFrame1"] = "BagnonBankFrame1",
+	--["BagnonInventoryFrame1"] = "BagnonInventoryFrame1",
+	--["BagnonBankFrame1"] = "BagnonBankFrame1",
 	["ContainerFrame1"] = "ContainerFrame1",
-	["ContainerFrame2"] = "ContainerFrame2",
-	["ContainerFrame3"] = "ContainerFrame3",
-	["ContainerFrame4"] = "ContainerFrame4",
-	["ContainerFrame5"] = "ContainerFrame5",
+	--["ContainerFrame2"] = "ContainerFrame2",
+	--["ContainerFrame3"] = "ContainerFrame3",
+	--["ContainerFrame4"] = "ContainerFrame4",
+	--["ContainerFrame5"] = "ContainerFrame5",
 
 }
+]]
 local friendlyFrameNamesParts = {
 	["FrameGreetingPanel"] = L["Panel"],
 	["GreetingScrollFrame"] = L["Sub panel"],
@@ -2294,7 +2301,7 @@ local function ItemName_helper(aText)
 end
 
 ---------------------------------------------------------------------------------------------------------------------------------------
-local function IterateChildren(t, tab)
+function SkuCore:IterateChildren(t, tab)
 	local tResults = {}
 
 	if t.GetRegions then
@@ -2325,7 +2332,7 @@ local function IterateChildren(t, tab)
 						end
 					end
 
-					local tChildsResult = IterateChildren(dtc[x], tab.."  ")
+					local tChildsResult = SkuCore:IterateChildren(dtc[x], tab.."  ")
 					if #tChildsResult == 1 then
 						tResults[fName].childs = tChildsResult[tChildsResult[1]].childs
 					elseif #tChildsResult > 1 then
@@ -2469,7 +2476,7 @@ local function IterateChildren(t, tab)
 						if dtc[x] then
 							if not tResults[fName].func then
 								if (dtc[x]:GetNumRegions() + dtc[x]:GetNumChildren()) > 0 then
-									local tChildsResult = IterateChildren(dtc[x], tab.."  ")
+									local tChildsResult = SkuCore:IterateChildren(dtc[x], tab.."  ")
 									--if there is only one child, set its content directly to this item; except it's a money frame, then there may just one item
 									if #tChildsResult == 1 and not string.find(fName, "Money") then
 										tResults[fName].childs = tChildsResult[tChildsResult[1]].childs
@@ -2692,7 +2699,7 @@ function SkuCore:CheckFrames(aForceLocalRoot)
 					childs = {},
 					}
 				if not SkuCore.interactFramesListManual[tOpenFrames[x]] then
-					tGossipList[tOpenFrames[x]].childs = IterateChildren(tGossipList[tOpenFrames[x]].obj, "")
+					tGossipList[tOpenFrames[x]].childs = SkuCore:IterateChildren(tGossipList[tOpenFrames[x]].obj, "")
 				else
 					SkuCore.interactFramesListManual[tOpenFrames[x]](tGossipList[tOpenFrames[x]].childs)
 				end

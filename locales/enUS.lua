@@ -193,8 +193,8 @@ L["Content "]  = "Content " --adjective; pet happiness
 L["Happy"]  = "Happy" --adjective; pet happiness
 L["Pet"]  = "Pet" -- noun; hunter pet
 L["Cursor"]  = "Cursor " --
-L["taxi;started"]  = "taxi;start" --
-L["taxi;ended"]  = "taxi;end" --
+L["taxi;started"]  = "flight;started" --
+L["taxi;ended"]  = "flight;ended" --
 L["cast"]  = "cast" --verb
 L["Combat start"]  = "combat start" --
 L["Combat end"]  = "combat end" --
@@ -1512,3 +1512,15 @@ L["other"] = "other"
 
 L["out of range melee"]  = "Not in melee range" --
 L["out of range cast"]  = "Not in cast range" --
+
+L["Read all tooltips"] = "Read all tooltips"
+
+L["Pets"] = "Pets"
+L["Mounts"] = "Mounts"
+L["local Bags"] = "Bags"
+
+L["Dein combopunkte auf das aktuelle ziel, die die Aura auslösen sollen"] = "Your combo points on the current target triggering the aura"
+L["Eigene combopunkte"] = "Your combo points"
+L["Deine combopunkte auf dein aktuelles ziel"] = "Your combo points on the current target"
+
+L["TTS alternative voice"] = "TTS alternative voice"

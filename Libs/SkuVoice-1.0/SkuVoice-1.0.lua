@@ -15,6 +15,7 @@ local SapiLangIds = {
 local mSkuVoiceQueue = {}
 local mSkuVoiceQueueBTTS = {}
 local mSkuVoiceQueueBTTS_Speaking = {}
+local mSkuVoiceQueueBTTS_Speaking_DNO = {}
 SkuVoice.LastPlayedString = ""
 --setmetatable(mSkuVoiceQueue, SkuNav.PrintMT)
 
@@ -24,6 +25,11 @@ function SkuVoice:Create()
 	f:SetScript("OnEvent", function(self, aEventName)
 		if aEventName == "VOICE_CHAT_TTS_PLAYBACK_FINISHED" then
 			if mSkuVoiceQueueBTTS_Speaking[1] then
+				--print("FINISHED", mSkuVoiceQueueBTTS_Speaking[1])
+				if mSkuVoiceQueueBTTS_Speaking_DNO[mSkuVoiceQueueBTTS_Speaking[1]] then
+					--print("DNO removed")
+					mSkuVoiceQueueBTTS_Speaking_DNO[mSkuVoiceQueueBTTS_Speaking[1]] = nil
+				end
 				table.remove(mSkuVoiceQueueBTTS_Speaking, 1)
 			end
 		end
@@ -36,30 +42,49 @@ function SkuVoice:Create()
 		fTimeBTTS = fTimeBTTS + time
 		if fTimeBTTS > 0.01 then
 			fTimeBTTS = 0
+
 			local tLastReset
+			local tHasV = false
+			for i, v in pairs(mSkuVoiceQueueBTTS_Speaking_DNO) do
+				tHasV = true
+			end
+			for i, v in pairs(mSkuVoiceQueueBTTS) do
+				if v.doNotOverwrite == true then
+					tHasV = true
+				end
+			end
 			for x = 1, #mSkuVoiceQueueBTTS do
-				if mSkuVoiceQueueBTTS[x] == "queuereset" then
-					tLastReset = x
+				if tHasV == false then
+					if mSkuVoiceQueueBTTS[x].text == "queuereset" then
+						tLastReset = x
+					end
 				end
 			end
 			if tLastReset then
 				for x = 1, tLastReset - 1 do
-					--print("  Q R: ", x, mSkuVoiceQueueBTTS[1])
+					--print("  Q R: ", x, mSkuVoiceQueueBTTS[1].text)
 					table.remove(mSkuVoiceQueueBTTS, 1)
 				end
 			end
 			for x = 1, #mSkuVoiceQueueBTTS do
-				--print("  Q: ", x, mSkuVoiceQueueBTTS[x])
+				--print("  Q: ", x, mSkuVoiceQueueBTTS[x].text)
 			end
 			if #mSkuVoiceQueueBTTS > 0 then
-				--print("           ", tLastWait, mSkuVoiceQueueBTTS[1])
-				local tValue = mSkuVoiceQueueBTTS[1]
+				local tValue = mSkuVoiceQueueBTTS[1].text
+				local tDnO = mSkuVoiceQueueBTTS[1].doNotOverwrite
+				local tVoice = mSkuVoiceQueueBTTS[1].bVoice
 				if tValue == "queuereset" then
 					table.remove(mSkuVoiceQueueBTTS, 1)
-					C_VoiceChat.StopSpeakingText()
-					mSkuVoiceQueueBTTS_Speaking = {}
-					tLastWait = 0.10
+					if tHasV == false then
+						--print("queuereset")
+						C_VoiceChat.StopSpeakingText()
+						mSkuVoiceQueueBTTS_Speaking = {}
+						mSkuVoiceQueueBTTS_Speaking_DNO = {}
+						tLastWait = 0.10
+					
+					end
 				else
+					--print("process from q", mSkuVoiceQueueBTTS[1].text, mSkuVoiceQueueBTTS[1].doNotOverwrite)
 					if #mSkuVoiceQueueBTTS > 1 or tLastWait <= 0 then
 						table.remove(mSkuVoiceQueueBTTS, 1)
 						local tIsAlreadySpeakingThat
@@ -71,7 +96,14 @@ function SkuVoice:Create()
 						end
 						if not tIsAlreadySpeakingThat then
 							table.insert(mSkuVoiceQueueBTTS_Speaking, tValue)
-							C_VoiceChat.SpeakText(SkuOptions.db.profile["SkuChat"].WowTtsVoice - 1, tValue, 4, SkuOptions.db.profile["SkuChat"].WowTtsSpeed, SkuOptions.db.profile["SkuChat"].WowTtsVolume)
+							if tDnO == true then
+								--print("DNO added", tValue)
+								mSkuVoiceQueueBTTS_Speaking_DNO[tValue] = true
+								for i, v in pairs(mSkuVoiceQueueBTTS_Speaking_DNO) do
+									--print("xxxxxxx mSkuVoiceQueueBTTS_Speaking_DNO", i, v)			
+								end								
+							end
+							C_VoiceChat.SpeakText(tVoice - 1, tValue, 4, SkuOptions.db.profile["SkuChat"].WowTtsSpeed, SkuOptions.db.profile["SkuChat"].WowTtsVolume)
 						end
 						--print("tLastWait = 0")
 						tLastWait = 0.1
@@ -179,8 +211,8 @@ end
 
 ---------------------------------------------------------------------------------------------------------------------------------------
 local function SplitStringBTTS(aString)
-	--dprint("split:", aString, SkuAudioFileIndex[aString])
-	if SkuAudioFileIndex[aString] then
+	--dprint("split:", aString, SkuAudioFileIndex[Sku.Loc][aString])
+	if SkuAudioFileIndex[Sku.Loc][aString] then
 		return aString
 	end
 	if aString == nil then
@@ -232,8 +264,8 @@ local function SplitStringBTTS(aString)
 end
 
 local function SplitString(aString)
-	--dprint("split:", aString, SkuAudioFileIndex[aString])
-	if SkuAudioFileIndex[aString] then
+	--dprint("split:", aString, SkuAudioFileIndex[Sku.Loc][aString])
+	if SkuAudioFileIndex[Sku.Loc][aString] then
 		return aString
 	end
 	if aString == nil then
@@ -320,7 +352,10 @@ function SkuVoice:StopAllOutputs()
 	else
 		table.insert(mSkuVoiceQueueBTTS_Speaking, tValue)
 		C_VoiceChat.StopSpeakingText()
-	end	
+	end
+	mSkuVoiceQueueBTTS_Speaking = {}
+	mSkuVoiceQueueBTTS_Speaking_DNO = {}
+
 end
 
 ---------------------------------------------------------------------------------------------------------
@@ -429,7 +464,7 @@ function SkuVoice:CheckIgnore(aString)
 end
 
 ---------------------------------------------------------------------------------------------------------
-function SkuVoice:OutputStringBTtts(aString, aOverwrite, aWait, aLength, aDoNotOverwrite, aIsMulti, aSoundChannel, engine, aSpell, aVocalizeAsIs, aInstant, aDnQ, aIgnoreLinks)
+function SkuVoice:OutputStringBTtts(aString, aOverwrite, aWait, aLength, aDoNotOverwrite, aIsMulti, aSoundChannel, engine, aSpell, aVocalizeAsIs, aInstant, aDnQ, aIgnoreLinks, aAlternativeVoice)
 	if not aString then
 		return
 	end
@@ -437,13 +472,18 @@ function SkuVoice:OutputStringBTtts(aString, aOverwrite, aWait, aLength, aDoNotO
 	if SkuVoice:CheckIgnore(aString) then
 		aIgnoreLinks = true
 	end
-
+--[[
 	if SkuOptions.db.profile["SkuOptions"].useBlizzTtsInMenu ~= true and not engine then
 		SkuVoice:OutputString(aString, aOverwrite, aWait, aLength, aDoNotOverwrite, aIsMulti, aSoundChannel, engine, aSpell, aVocalizeAsIs, aInstant, aDnQ, aIgnoreLinks)
 		return
 	end
+]]
+	if string.find(aString, "sound-") or string.find(aString, "male-") or string.find(aString, "sound#") then
+		SkuVoice:OutputString(aString, aOverwrite, aWait, aLength, aDoNotOverwrite, aIsMulti, aSoundChannel, engine, aSpell, aVocalizeAsIs, aInstant, aDnQ, aIgnoreLinks)
+		return
+	end
 
-	--print("OutputStringBTtts(aString", aString, aOverwrite, aWait, aLength, aDoNotOverwrite, aIsMulti, aSoundChannel, engine, aSpell, aVocalizeAsIs, aInstant, aDnQ, aIgnoreLinks)
+	--print("OutputStringBTtts(", aString, aOverwrite, aWait, aLength, aDoNotOverwrite, aIsMulti, aSoundChannel, engine, aSpell, aVocalizeAsIs, aInstant, aDnQ, aIgnoreLinks)
 
 	aDnQ = aDnQ or false
 
@@ -476,22 +516,37 @@ function SkuVoice:OutputStringBTtts(aString, aOverwrite, aWait, aLength, aDoNotO
 
 	--empty the queue
 	if aOverwrite == true then
-		mSkuVoiceQueueBTTS[#mSkuVoiceQueueBTTS + 1] = "queuereset"
-		--print("ADD RESET TO QUEUE")
-		local tIt = true
-		while tIt == true do
-			tIt = false
-			for i, v in pairs(mSkuVoiceQueue) do
-				if v.doNotOverwrite ~= true then
-					--stop it first; just to be sure
-					if v.soundHandle then
-						StopSound(v.soundHandle, 0)
+		local tHasV = false
+		for i, v in pairs(mSkuVoiceQueueBTTS_Speaking_DNO) do
+			--print("mSkuVoiceQueueBTTS_Speaking_DNO", i, v)
+			tHasV = true
+		end
+		if  tHasV == false then
+			--print("to queue", "queuereset")
+			mSkuVoiceQueueBTTS[#mSkuVoiceQueueBTTS + 1] = {
+				["text"] = "queuereset",
+				["wait"] = false,
+				["doNotOverwrite"] = false,
+				["dnq"] = true,		
+				["bVoice"] = SkuOptions.db.profile["SkuChat"].WowTtsVoice,				
+			}
+			--print("ADD RESET TO QUEUE")
+			local tIt = true
+			while tIt == true do
+				tIt = false
+				for i, v in pairs(mSkuVoiceQueue) do
+					if v.doNotOverwrite ~= true then
+						--stop it first; just to be sure
+						if v.soundHandle then
+							StopSound(v.soundHandle, 0)
+						end
+						table.remove(mSkuVoiceQueue, i)
+						tIt = true
 					end
-					table.remove(mSkuVoiceQueue, i)
-					tIt = true
 				end
 			end
 		end
+
 --[[
 		if IsMacClient() == true then
 			C_VoiceChat.StopSpeakingText()
@@ -587,11 +642,12 @@ function SkuVoice:OutputStringBTtts(aString, aOverwrite, aWait, aLength, aDoNotO
 	local tFinalStringForBTtsMac = ""
 
 	for x = 1, #tStrings do
-		if tStrings[x] == "§01" then
+		if string.find(tStrings[x], "§01") then
 			if SkuOptions.db.profile["SkuChat"].WowTtsTags ~= false then
-				tStrings[x] = '<silence msec="100"/>'
+				tStrings[x] = string.gsub(tStrings[x], "§01", '<silence msec="100"/>')
+				--tStrings[x] = '<silence msec="100"/>'
 			else
-				tStrings[x] = " "
+				tStrings[x] = string.gsub(tStrings[x], "§01", " ")
 			end
 		end
 
@@ -631,33 +687,32 @@ function SkuVoice:OutputStringBTtts(aString, aOverwrite, aWait, aLength, aDoNotO
 	end
 	tFinalStringForBTtsMac = tFinalStringForBTtsMac
 
-	if IsMacClient() == true then
-		if aInstant then
-			mSkuVoiceQueueBTTS[#mSkuVoiceQueueBTTS + 1] = tFinalStringForBTtsMac
-		else
-			mSkuVoiceQueueBTTS[#mSkuVoiceQueueBTTS + 1] = tFinalStringForBTtsMac
-		end
-		--C_VoiceChat.SpeakText(SkuOptions.db.profile["SkuChat"].WowTtsVoice - 1, tFinalStringForBTtsMac, 4, SkuOptions.db.profile["SkuChat"].WowTtsSpeed, SkuOptions.db.profile["SkuChat"].WowTtsVolume)
-		if not aIgnoreLinks then
-			SkuOptions.TTS:GetLinksTableFromString(tFinalStringForBTtsMac, "")
-		end
+
+	local tVoice = SkuOptions.db.profile["SkuChat"].WowTtsVoice
+	if aAlternativeVoice then
+		tVoice = SkuOptions.db.profile["SkuChat"].WowTtsAlternativeVoice
+	end
+	if aInstant then
+		mSkuVoiceQueueBTTS[#mSkuVoiceQueueBTTS + 1] = {
+			["text"] = tFinalStringForBTts,
+			["wait"] = aWait,
+			["doNotOverwrite"] = aDoNotOverwrite or false,
+			["dnq"] = aDnQ,
+			["bVoice"] = tVoice,
+		}
 	else
-		--C_Timer.After(0.01, function() 
-			--print("ADD OUTPUT TO QUEUE", tFinalStringForBTts)
-			if aInstant then
-				mSkuVoiceQueueBTTS[#mSkuVoiceQueueBTTS + 1] = tFinalStringForBTts
-			else
-				mSkuVoiceQueueBTTS[#mSkuVoiceQueueBTTS + 1] = tFinalStringForBTts
-			end
-	
-			--C_VoiceChat.SpeakText(SkuOptions.db.profile["SkuChat"].WowTtsVoice - 1, tFinalStringForBTts, 4, SkuOptions.db.profile["SkuChat"].WowTtsSpeed, SkuOptions.db.profile["SkuChat"].WowTtsVolume)
-			if not aIgnoreLinks then
-				SkuOptions.TTS:GetLinksTableFromString(tFinalStringForBTts, "")
-			end
-		--end)
+		mSkuVoiceQueueBTTS[#mSkuVoiceQueueBTTS + 1] = {
+			["text"] = tFinalStringForBTts,
+			["wait"] = aWait,
+			["doNotOverwrite"] = aDoNotOverwrite or false,
+			["bVoice"] = aDnQ,
+			["bVoice"] = tVoice,
+		}
 	end
 
-
+	if not aIgnoreLinks then
+		SkuOptions.TTS:GetLinksTableFromString(tFinalStringForBTts, "")
+	end
 
 end
 
@@ -670,7 +725,11 @@ function SkuVoice:OutputString(aString, aOverwrite, aWait, aLength, aDoNotOverwr
 	if not aString then
 		return
 	end
-	
+	if not string.find(aString, "sound-") and not string.find(aString, "male-") and not string.find(aString, "sound#") then
+		SkuVoice:OutputStringBTtts(aString, aOverwrite, aWait, aLength, aDoNotOverwrite, aIsMulti, aSoundChannel, engine, aSpell, aVocalizeAsIs, aInstant, aDnQ, aIgnoreLinks, true) 
+		return
+	end
+
 	if SkuVoice:CheckIgnore(aString) then
 		aIgnoreLinks = true
 	end
@@ -697,7 +756,7 @@ function SkuVoice:OutputString(aString, aOverwrite, aWait, aLength, aDoNotOverwr
 		aIsMulti = true
 	end
 
-	if not aString or not SkuAudioDataLenIndex or not SkuAudioFileIndex then
+	if not aString or not SkuAudioDataLenIndex[Sku.Loc] or not SkuAudioFileIndex[Sku.Loc] then
 		return
 	end
 	if aString == "" then
@@ -723,7 +782,6 @@ function SkuVoice:OutputString(aString, aOverwrite, aWait, aLength, aDoNotOverwr
 		if engine ~= 3 then
 			if IsMacClient() == true then
 				C_VoiceChat.StopSpeakingText()
-				mSkuVoiceQueueBTTS_Speaking = {}
 				table.insert(mSkuVoiceQueueBTTS_Speaking, tValue)
 				C_VoiceChat.SpeakText(SkuOptions.db.profile["SkuChat"].WowTtsVoice - 1, aString, 4, SkuOptions.db.profile["SkuChat"].WowTtsSpeed, SkuOptions.db.profile["SkuChat"].WowTtsVolume)
 				if not aIgnoreLinks then
@@ -731,7 +789,6 @@ function SkuVoice:OutputString(aString, aOverwrite, aWait, aLength, aDoNotOverwr
 				end
 			else
 				C_VoiceChat.StopSpeakingText()
-				mSkuVoiceQueueBTTS_Speaking = {}
 				C_Timer.After(0.05, function() 
 					table.insert(mSkuVoiceQueueBTTS_Speaking, tValue)
 					C_VoiceChat.SpeakText(SkuOptions.db.profile["SkuChat"].WowTtsVoice - 1, aString, 4, SkuOptions.db.profile["SkuChat"].WowTtsSpeed, SkuOptions.db.profile["SkuChat"].WowTtsVolume)
@@ -740,6 +797,8 @@ function SkuVoice:OutputString(aString, aOverwrite, aWait, aLength, aDoNotOverwr
 					end
 				end)
 			end
+			mSkuVoiceQueueBTTS_Speaking = {}
+			mSkuVoiceQueueBTTS_Speaking_DNO = {}
 		end
 	else
 		-- don't vocalize numbers > 20000 or floats
@@ -857,20 +916,20 @@ function SkuVoice:OutputString(aString, aOverwrite, aWait, aLength, aDoNotOverwr
 			if tStrings[x] == "§01" then
 				tStrings[x] = "sound-silence0.1"
 			end
-			local tFile = SkuAudioFileIndex[tostring(tStrings[x])]
+			local tFile = SkuAudioFileIndex[Sku.Loc][tostring(tStrings[x])]
 
 			if tFile == nil then
 				local tModString = string.lower(tostring(tStrings[x]))
-				tFile = SkuAudioFileIndex[tModString]
+				tFile = SkuAudioFileIndex[Sku.Loc][tModString]
 			end
 			if tFile == nil then
 				local tModString = string.upper(string.sub(tostring(tStrings[x]),1,1))..string.sub(tostring(tStrings[x]),2)
-				tFile = SkuAudioFileIndex[tModString]
+				tFile = SkuAudioFileIndex[Sku.Loc][tModString]
 			end
 			--dprint(tStrings[x], "tFile", tFile)
 
 			if tFile == nil then
-				tFile = SkuAudioFileIndex["sound-audiofehltbeep"]
+				tFile = SkuAudioFileIndex[Sku.Loc]["sound-audiofehltbeep"]
 				if SkuOptions.db then
 
 					if SkuOptions.db.realm.missingAudio == nil then
@@ -886,14 +945,14 @@ function SkuVoice:OutputString(aString, aOverwrite, aWait, aLength, aDoNotOverwr
 			end
 			if tFile then
 				if tFile ~= "" then
-					local tLength = SkuAudioDataLenIndex[tFile] or aLength
+					local tLength = SkuAudioDataLenIndex[Sku.Loc][tFile] or aLength
 
 					--if isMulti == true then
 						--tLength = tLength - ((100 - tonumber(SkuOptions.db.profile["SkuOptions"].TTSSepPause)) / 100) -- - 0.15
 					--end
 
 
-					tFile = "Interface\\AddOns\\"..Sku.AudiodataPath.."\\assets\\audio\\"..tFile
+					tFile = "Interface\\AddOns\\Sku\\SkuAudioData\\assets\\audio\\"..Sku.Loc.."\\"..tFile
 					aOverwrite = aOverwrite or false
 					aWait = aWait or false
 					tLength = tLength or 0
@@ -910,6 +969,7 @@ function SkuVoice:OutputString(aString, aOverwrite, aWait, aLength, aDoNotOverwr
 
 					--dprint(tFile)
 
+					dprint("tFile", tFile)					
 					if aInstant == true then
 						table.insert(mSkuVoiceQueue, 0 + x, {
 							["text"] = tStrings[x],
@@ -952,7 +1012,7 @@ function SkuVoice:CollectString(aString, aOverwrite, aWait, aLength, aDoNotOverw
 		aIsMulti = true
 	end
 
-	if not aString or not SkuAudioDataLenIndex or not SkuAudioFileIndex then
+	if not aString or not SkuAudioDataLenIndex[Sku.Loc] or not SkuAudioFileIndex[Sku.Loc] then
 		return
 	end
 	if aString == "" then
@@ -1031,18 +1091,18 @@ function SkuVoice:CollectString(aString, aOverwrite, aWait, aLength, aDoNotOverw
 	end
 
 	for x = 1, #tStrings do
-		local tFile = SkuAudioFileIndex[tostring(tStrings[x])]
+		local tFile = SkuAudioFileIndex[Sku.Loc][tostring(tStrings[x])]
 
 		if tFile == nil then
 			local tModString = string.lower(tostring(tStrings[x]))
-			tFile = SkuAudioFileIndex[tModString]
+			tFile = SkuAudioFileIndex[Sku.Loc][tModString]
 		end
 		if tFile == nil then
 			local tModString = string.upper(string.sub(tostring(tStrings[x]),1,1))..string.sub(tostring(tStrings[x]),2)
-			tFile = SkuAudioFileIndex[tModString]
+			tFile = SkuAudioFileIndex[Sku.Loc][tModString]
 		end
 		if tFile == nil then
-			tFile = SkuAudioFileIndex["sound-audiofehltbeep"]
+			tFile = SkuAudioFileIndex[Sku.Loc]["sound-audiofehltbeep"]
 			if SkuOptions.db then
 
 				if SkuOptions.db.realm.missingAudio == nil then
@@ -1072,6 +1132,7 @@ function SkuVoice:StopOutputEmptyQueue()
 	end
 	mSkuVoiceQueue = {}
 	mSkuVoiceQueueBTTS_Speaking = {}
+	mSkuVoiceQueueBTTS_Speaking_DNO = {}
 	C_VoiceChat.StopSpeakingText()
 end
 

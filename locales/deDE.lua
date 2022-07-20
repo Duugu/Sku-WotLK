@@ -1506,3 +1506,16 @@ L["other"] = "andere"
 
 L["out of range melee"]  = "Nicht in nahkampf Reichweite" --
 L["out of range cast"]  = "Nicht in zauber Reichweite" --
+
+L["Read all tooltips"] = "Alle tooltips lesen"
+
+L["Pets"] = "Haustiere"
+L["Mounts"] = "Reittiere"
+L["local Bags"] = "Taschen"
+
+
+L["Dein combopunkte auf das aktuelle ziel, die die Aura auslösen sollen"] = "Dein combopunkte auf das aktuelle ziel, die die Aura auslösen sollen"
+L["Eigene combopunkte"] = "Eigene combopunkte"
+L["Deine combopunkte auf dein aktuelles ziel"] = "Deine combopunkte auf dein aktuelles ziel"
+
+L["TTS alternative voice"] = "Alternative TTS stimme"

@@ -61,6 +61,7 @@ WaypointCacheLookupAll = {}
 local WaypointCacheLookupPerContintent = {}
 function SkuNav:CreateWaypointCache(aAddLocalizedNames)
 	dprint("CreateWaypointCache")
+Sku:MetricPoint("SkuNav:CreateWaypointCache start")	
 	local beginTime = debugprofilestop()
 
 	WaypointCache = {}
@@ -391,7 +392,7 @@ function SkuNav:CreateWaypointCache(aAddLocalizedNames)
 	SkuNav:LoadLinkDataFromProfile()
 
 	dprint("End", debugprofilestop() - beginTime)
-
+Sku:MetricPoint("SkuNav:CreateWaypointCache end")	
 end
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -867,14 +868,19 @@ function SkuNav:PlayWpComments(aWpName)
 	end
 	if tWpData.comments then
 		if #tWpData.comments > 0 then
+			local tOutputString = ""
 			for x = 1, #tWpData.comments do
 				local comment = tWpData.comments[x] -- the comment to read out
 				if comment ~= nil and comment ~= "" then -- check comment of waypoint is a empty string
 					print(L["Waypoint information"]..": "..comment)
-					SkuOptions.Voice:OutputString(" ", true, true, 0.3)
-					SkuOptions:VocalizeMultipartString(L["Waypoint information"]..": "..comment, false, true, nil, nil, 2)
+					--SkuOptions.Voice:OutputString(" ", true, true, 0.3)
+					--SkuOptions:VocalizeMultipartString(L["Waypoint information"]..": "..comment, false, true, nil, nil, 2)
+					tOutputString = tOutputString.." "..L["Waypoint information"]..": "..comment
 				end
 			end
+			if tOutputString ~= "" then
+				SkuOptions.Voice:OutputString(tOutputString, true, true, 0.8, true)
+			end			
 		end
 	end
 end
@@ -1116,19 +1122,19 @@ end
 function SkuNav:StartRouteRecording(aWPAName, aDeleteFlag)
 	print("StartRouteRecording", aWPAName, aDeleteFlag)
 	if SkuOptions.db.profile[MODULE_NAME].metapathFollowing == true then
-		SkuOptions.Voice:OutputString(L["Error"], false, true, 0.3, true)
-		SkuOptions.Voice:OutputString(L["Route folgen läuft"], false, true, 0.3, true)
+		SkuOptions.Voice:OutputString(L["Error"].." "..L["Route folgen läuft"], false, true, 0.3, true)
+		--SkuOptions.Voice:OutputString(L["Route folgen läuft"], false, true, 0.3, true)
 		return
 	end
 	if SkuOptions.db.profile[MODULE_NAME].routeRecording == true or SkuOptions.db.profile[MODULE_NAME].routeRecordingLastWp then
-		SkuOptions.Voice:OutputString(L["Error"], false, true, 0.3, true)
-		SkuOptions.Voice:OutputString(L["Aufzeichnung läuft"], false, true, 0.3, true)
+		SkuOptions.Voice:OutputString(L["Error"].." "..L["Aufzeichnung läuft"], false, true, 0.3, true)
+		--SkuOptions.Voice:OutputString(L["Aufzeichnung läuft"], false, true, 0.3, true)
 		return
 	end
 	if SkuOptions.db.profile[MODULE_NAME].selectedWaypoint ~= "" then
-		SkuOptions.Voice:OutputString(L["Error"], false, true, 0.3, true)
-		SkuOptions.Voice:OutputString("", false, true, 0.3, true)
-		SkuOptions.Voice:OutputString(L["Wegpunkt folgen läuft"], false, true, 0.3, true)
+		SkuOptions.Voice:OutputString(L["Error"].." "..L["Wegpunkt folgen läuft"], false, true, 0.3, true)
+		--SkuOptions.Voice:OutputString("", false, true, 0.3, true)
+		--SkuOptions.Voice:OutputString(L["Wegpunkt folgen läuft"], false, true, 0.3, true)
 		return
 	end
 
@@ -1159,8 +1165,8 @@ function SkuNav:EndRouteRecording(aWpName, aDeleteFlag)
 		not SkuOptions.db.profile[MODULE_NAME].routeRecordingLastWp or 
 		SkuOptions.db.profile[MODULE_NAME].routeRecordingLastWp == "" 
 	then
-		SkuOptions.Voice:OutputString(L["Error"], false, true, 0.3, true)
-		SkuOptions.Voice:OutputString(L["Not recording"], false, true, 0.3, true)
+		SkuOptions.Voice:OutputString(L["Error"].." "..L["Not recording"], false, true, 0.3, true)
+		--SkuOptions.Voice:OutputString(L["Not recording"], false, true, 0.3, true)
 		return
 	end
 
@@ -1554,11 +1560,11 @@ function SkuNav:ProcessDirAndDistWithWpSelected()
 						ttimeDistanceOutput = GetServerTime()
 						local tDirection = SkuNav:GetDirectionToWp(SkuOptions.db.profile[MODULE_NAME].selectedWaypoint)
 						if SkuOptions.db.profile[MODULE_NAME].vocalizeFullDirectionDistance == true then
-							SkuOptions.Voice:OutputString(string.format("%02d", tDirection)..";"..L["Clock"], true, true, 0.3)
-							SkuOptions.Voice:OutputString(distance..L[";Meter"], false, true, 0.2)
+							SkuOptions.Voice:OutputString(string.format("%02d", tDirection)..";"..L["Clock"].." "..distance..L[";Meter"], true, true, 0.3)
+							--SkuOptions.Voice:OutputString(distance..L[";Meter"], false, true, 0.2)
 						else
-							SkuOptions.Voice:OutputString(string.format("%02d", tDirection), true, true, 0.3)
-							SkuOptions.Voice:OutputString(distance, false, true, 0.2)
+							SkuOptions.Voice:OutputString(string.format("%02d", tDirection).." "..distance, true, true, 0.3)
+							--SkuOptions.Voice:OutputString(distance, false, true, 0.2)
 						end
 					end
 				end
@@ -1575,7 +1581,7 @@ function SkuNav:StartReverseRtFollow()
 	end
 
 	if SkuOptions.db.profile[MODULE_NAME].routeRecording == true then
-		SkuOptions.Voice:OutputString(L["Error"], false, true, 0.3, true)
+		SkuOptions.Voice:OutputString(L["Error"].." "..L["Recording in progress"], false, true, 0.3, true)
 		SkuOptions.Voice:OutputString(L["Recording in progress"], false, true, 0.3, true)
 		return
 	end
@@ -1998,6 +2004,13 @@ function SkuNav:CreateSkuNavMain()
 			SkuNav:SkuNavMMOpen()
 		end
 
+		if SkuOptions.db.profile["SkuNav"].showSkuMM == true or SkuOptions.db.profile["SkuNav"].showRoutesOnMinimap == true then
+			SkuOptions:StartStopBackgroundSound(false, nil, "map")
+			SkuOptions:StartStopBackgroundSound(true, "catpurrwaterdrop.mp3", "map")
+		else
+			SkuOptions:StartStopBackgroundSound(false, nil, "map")
+		end	
+				
 		if a == SkuOptions.db.profile["SkuOptions"].SkuKeyBinds["SKU_KEY_TOGGLEREACHRANGE"].key then
 			SkuOptions.db.profile[MODULE_NAME].standardWpReachedRange = SkuOptions.db.profile[MODULE_NAME].standardWpReachedRange + 1
 			if SkuOptions.db.profile[MODULE_NAME].standardWpReachedRange > #SkuNav.StandardWpReachedRanges then

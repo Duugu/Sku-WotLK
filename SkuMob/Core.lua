@@ -12,20 +12,6 @@ local SkuMobDB = {
 	lastTargetGuid = 0,
 	nextAudioQ = "",
 	lastAudioQ = "",
-	soundFiles = {
-		[100] = [[Interface\AddOns\]]..Sku.AudiodataPath..[[\assets\audio\0805210501-09.mp3]],
-		[90] = [[Interface\AddOns\]]..Sku.AudiodataPath..[[\assets\audio\0805210501-08.mp3]],
-		[80] = [[Interface\AddOns\]]..Sku.AudiodataPath..[[\assets\audio\0805210501-07.mp3]],
-		[70] = [[Interface\AddOns\]]..Sku.AudiodataPath..[[\assets\audio\0805210501-06.mp3]],
-		[60] = [[Interface\AddOns\]]..Sku.AudiodataPath..[[\assets\audio\0805210501-05.mp3]],
-		[50] = [[Interface\AddOns\]]..Sku.AudiodataPath..[[\assets\audio\0805210501-04.mp3]],
-		[40] = [[Interface\AddOns\]]..Sku.AudiodataPath..[[\assets\audio\0805210501-03.mp3]],
-		[30] = [[Interface\AddOns\]]..Sku.AudiodataPath..[[\assets\audio\0805210501-02.mp3]],
-		[20] = [[Interface\AddOns\]]..Sku.AudiodataPath..[[\assets\audio\021321052314.mp3]],
-		[10] = [[Interface\AddOns\]]..Sku.AudiodataPath..[[\assets\audio\021321052311.mp3]],
-		[0] = [[Interface\AddOns\]]..Sku.AudiodataPath..[[\assets\audio\female2--0.mp3]],
-		[L["dead"]] = [[Interface\AddOns\]]..Sku.AudiodataPath..[[\assets\audio\0805210501-10.mp3]],
-		},
 	}
 
 local SkuMobRaidTargetStrings = {
@@ -62,6 +48,7 @@ function SkuMob:OnEnable()
 				
 				if UnitGUID("target") then
 					if UnitCanAttack("player","target") ~= false then
+						local tOutputString = ""
 						local hp = math.floor(UnitHealth("target") / (UnitHealthMax("target") / 100))
 						local hpPer = math.floor(((hp / 10)) + 1) * 10
 						if hpPer < 100 and hpPer > 0 then
@@ -76,10 +63,9 @@ function SkuMob:OnEnable()
 							if  (SkuMobDB.nextAudioQ ~= hpPer) then
 								SkuMobDB.nextAudioQ = hpPer
 							end
-							
 							if SkuMobDB.nextAudioQ ~= "" then
 								if (SkuMobDB.nextAudioQ ~= SkuMobDB.lastAudioQ) or (UnitGUID("target") ~= SkuMobDB.lastTargetGuid) then
-									SkuOptions.Voice:OutputString(SkuMobDB.nextAudioQ, false, false, 0.3)
+									tOutputString = tOutputString.." "..SkuMobDB.nextAudioQ
 									SkuMobDB.lastAudioQ = SkuMobDB.nextAudioQ
 									SkuMobDB.nextAudioQ = ""
 								end
@@ -87,6 +73,9 @@ function SkuMob:OnEnable()
 						end
 							
 						SkuMobDB.lastTargetGuid = UnitGUID("target")
+						if tOutputString ~= "" then
+							SkuOptions.Voice:OutputString(tOutputString, false, false, 0.3)
+						end
 					end
 				else
 					SkuMobDB.lastTargetGuid = 0
@@ -135,6 +124,7 @@ function SkuMob:PLAYER_TARGET_CHANGED(arg1, arg2)
 		return
 	end
 
+	local tOutputString = ""
 
 	
 	local tUnitName = GetUnitName("target", false)
@@ -279,23 +269,30 @@ function SkuMob:PLAYER_TARGET_CHANGED(arg1, arg2)
 	local hp = math.floor(UnitHealth("target") / (UnitHealthMax("target") / 100))
 	if hp == 0 then
 		if tIsPlayerControled == false then
-			SkuOptions.Voice:OutputString(L["dead"], true, true, 0.3)
-			SkuOptions.Voice:OutputString(tUnitName, false, true, 0.8)
+			--SkuOptions.Voice:OutputString(L["dead"], true, true, 0.3)
+			--SkuOptions.Voice:OutputString(tUnitName, false, true, 0.8)
+			tOutputString = tOutputString.." "..L["dead"]
+			tOutputString = tOutputString.." "..tUnitName
 		else
-			SkuOptions.Voice:OutputStringBTtts(L["dead"].." "..tUnitName, true, true, 0.3, nil, nil, nil, 1)
+			--SkuOptions.Voice:OutputStringBTtts(L["dead"].." "..tUnitName, true, true, 0.3, nil, nil, nil, 1)
+			tOutputString = tOutputString.." "..L["dead"].." "..tUnitName
 		end
 	else
 		if tRaidTargetString ~= "" and SkuOptions.db.profile["SkuMob"].vocalizeRaidTargetOnly == true then
 			if tIsPlayerControled == false then
-				SkuOptions.Voice:OutputString(tRaidTargetString, true, true, 0.8)
+				--SkuOptions.Voice:OutputString(tRaidTargetString, true, true, 0.8)
+				tOutputString = tOutputString.." "..tRaidTargetString
 			else
-				SkuOptions.Voice:OutputStringBTtts(tRaidTargetString, true, true, 0.8, nil, nil, nil, 1)
+				--SkuOptions.Voice:OutputStringBTtts(tRaidTargetString, true, true, 0.8, nil, nil, nil, 1)
+				tOutputString = tOutputString.." "..tRaidTargetString
 			end
 		else
 			if tIsPlayerControled == false then
-				SkuOptions.Voice:OutputString(tRaidTargetString..tReactionText..tUnitName, true, true, 0.8)
+				--SkuOptions.Voice:OutputString(tRaidTargetString..tReactionText..tUnitName, true, true, 0.8)
+				tOutputString = tOutputString.." "..tRaidTargetString..tReactionText..tUnitName
 			else
-				SkuOptions.Voice:OutputStringBTtts(tRaidTargetString..tReactionText..tUnitName, true, true, 0.8, nil, nil, nil, 1)
+				--SkuOptions.Voice:OutputStringBTtts(tRaidTargetString..tReactionText..tUnitName, true, true, 0.8, nil, nil, nil, 1)
+				tOutputString = tOutputString.." "..tRaidTargetString..tReactionText..tUnitName
 			end
 		end
 	end
@@ -316,18 +313,24 @@ function SkuMob:PLAYER_TARGET_CHANGED(arg1, arg2)
 		if tUnitLevel then
 			if tUnitLevel ~= -1 then
 				if tIsPlayerControled == false then
-					SkuOptions.Voice:OutputString(L["level"], false, true, 0.2)
-					SkuOptions.Voice:OutputString(string.format("%02d", tUnitLevel).." "..tClassifications[tClassification], false, true, 0.3)
+					--SkuOptions.Voice:OutputString(L["level"], false, true, 0.2)
+					--SkuOptions.Voice:OutputString(string.format("%02d", tUnitLevel).." "..tClassifications[tClassification], false, true, 0.3)
+					tOutputString = tOutputString.." "..L["level"]
+					tOutputString = tOutputString.." "..string.format("%02d", tUnitLevel).." "..tClassifications[tClassification]
 				else
 					--aString, aOverwrite, aWait, aLength, aDoNotOverwrite, aIsMulti, aSoundChannel, engine
-					SkuOptions.Voice:OutputStringBTtts(L["level"].." "..string.format("%02d", tUnitLevel), false, true, 0.2, nil, nil, nil, 1)
+					--SkuOptions.Voice:OutputStringBTtts(L["level"].." "..string.format("%02d", tUnitLevel), false, true, 0.2, nil, nil, nil, 1)
+					tOutputString = tOutputString.." "..L["level"].." "..string.format("%02d", tUnitLevel)
 				end
 			else
 				if tIsPlayerControled == false then
-					SkuOptions.Voice:OutputString(L["level"], false, true, 2.2)
-					SkuOptions.Voice:OutputString(L["Unknown"], false, true, 0.3)
+					--SkuOptions.Voice:OutputString(L["level"], false, true, 2.2)
+					--SkuOptions.Voice:OutputString(L["Unknown"], false, true, 0.3)
+					tOutputString = tOutputString.." "..L["level"]
+					tOutputString = tOutputString.." "..L["Unknown"]
 				else
-					SkuOptions.Voice:OutputStringBTtts(L["level"].." "..L["Unknown"], false, true, 2.2, nil, nil, nil, 1)
+					--SkuOptions.Voice:OutputStringBTtts(L["level"].." "..L["Unknown"], false, true, 2.2, nil, nil, nil, 1)
+					tOutputString = tOutputString.." "..L["level"].." "..L["Unknown"]
 				end
 			end
 		end
@@ -341,12 +344,17 @@ function SkuMob:PLAYER_TARGET_CHANGED(arg1, arg2)
 				if tLineTwoText then
 					if tLineTwoText ~= "" then
 						if not string.find(tLineTwoText, L["level"]) then
-							SkuOptions.Voice:OutputString(tLineTwoText, false, true, 0.3)
+							--SkuOptions.Voice:OutputString(tLineTwoText, false, true, 0.3)
+							tOutputString = tOutputString.." "..tLineTwoText
 						end
 					end
 				end
 			end
 		end
+	end
+
+	if tOutputString ~= "" then
+		SkuOptions.Voice:OutputString(tOutputString, true, true, 0.8)
 	end
 end
 

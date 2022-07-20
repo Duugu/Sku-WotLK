@@ -8,15 +8,24 @@ Sku = {}
 Sku.L = LibStub("AceLocale-3.0"):GetLocale("Sku", false)
 Sku.Loc = Sku.L["locale"]
 
+--[[
 Sku.AudiodataPath = ""
 if Sku.Loc == "deDE" then
 	Sku.AudiodataPath = "SkuAudioData"
 elseif Sku.Loc == "enUS" or Sku.Loc == "enGB" or Sku.Loc == "enAU" then
 	Sku.AudiodataPath = "SkuAudioData_en"
 end
-
+]]
 ---------------------------------------------------------------------------------------------------------------------------------------
 Sku.testMode = false
+
+Sku.metric = {}
+debugprofilestart()
+function Sku:MetricPoint(aText)
+	Sku.metric[#Sku.metric + 1] = {aText, debugprofilestop()/1000}
+end
+
+
 
 ---------------------------------------------------------------------------------------------------------------------------------------
 Sku.debug = false

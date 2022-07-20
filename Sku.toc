@@ -4,6 +4,10 @@
 ## Dependencies: SkuBeaconSoundsets
 ## Version: r30-wrath
 
+SkuAudioData\assets\SkuAudioFileIndex.lua
+SkuAudioData\assets\SkuAudioDataLenIndex.lua
+SkuAudioData\Core.lua
+
 embeds.xml
 
 Libs\HereBeDragons\HereBeDragons-2.0.lua

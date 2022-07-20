@@ -1336,12 +1336,13 @@ function SkuCore:AuctionHouseMenuBuilder()
                         local aGossipItemTable = {
                            textFull = select(2, SkuCore:AuctionBuildItemTooltip({[17] = itemID}, nil, true, true)),
                            itemId = itemID,
-                           containerFrameName = "ContainerFrame"..bag.."Item"..slot,
+                           containerFrameName = "ContainerFrame"..(bag + 1).."Item"..(GetContainerNumSlots(bag) - slot + 1),
                         }
+
+                        
                         tNewMenuSubSubEntry.textFull = aGossipItemTable.textFull
-                        if _G["BagnonInventoryFrame1"] then
-                           aGossipItemTable.containerFrameName = _G["BagnonInventoryFrame1"].itemGroup.buttons[bag][slot]:GetName()
-                        end
+                        
+
                      
                         tNewMenuSubSubEntry.OnAction = function(self, aValue, aName)
                            dprint("sell OnAction", self, aValue, aName, self.selectTarget.name, self.selectTarget.price, self.price)
@@ -1367,6 +1368,7 @@ function SkuCore:AuctionHouseMenuBuilder()
                            _G["AuctionFrameTab3"]:GetScript("OnClick")(_G["AuctionFrameTab3"], "LeftButton") 
                            _G["AuctionsItemButton"]:GetScript("OnDragStart")(_G["AuctionsItemButton"], "LeftButton") 
                            ClearCursor()
+print(aGossipItemTable, aGossipItemTable.containerFrameName)                           
                            _G[aGossipItemTable.containerFrameName]:GetScript("OnDragStart")(_G[aGossipItemTable.containerFrameName], "LeftButton") 
                            ClickAuctionSellItemButton() 
                      

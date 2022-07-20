@@ -55,9 +55,9 @@ local defaults = {
 	}
 
 ---------------------------------------------------------------------------------------------------------------------------------------
-function SkuOptions:CloseMenu()
+function SkuOptions:CloseMenu(aSilent)
 	if SkuOptions:IsMenuOpen() == true then
-		_G["OnSkuOptionsMain"]:GetScript("OnClick")(_G["OnSkuOptionsMain"], SkuOptions.db.profile["SkuOptions"].SkuKeyBinds["SKU_KEY_OPENMENU"].key)
+		_G["OnSkuOptionsMain"]:GetScript("OnClick")(_G["OnSkuOptionsMain"], SkuOptions.db.profile["SkuOptions"].SkuKeyBinds["SKU_KEY_OPENMENU"].key, aSilent)
 	end
 end
 
@@ -155,12 +155,13 @@ function SkuOptions:SlashFunc(input, aSilent)
 				InviteToGroup(SkuChat.InvitePlayerName)
 				local tSpeakText = SkuChat.InvitePlayerName..L[" eingeladen"]
 				if IsMacClient() == true then
-					C_VoiceChat.StopSpeakingText()
-					C_VoiceChat.SpeakText(SkuOptions.db.profile["SkuChat"].WowTtsVoice - 1, tSpeakText,  4, SkuOptions.db.profile["SkuChat"].WowTtsSpeed, SkuOptions.db.profile["SkuChat"].WowTtsVolume)
+					SkuOptions.Voice:StopAllOutputs()--C_VoiceChat.StopSpeakingText()
+					--C_VoiceChat.SpeakText(SkuOptions.db.profile["SkuChat"].WowTtsVoice - 1, tSpeakText,  4, SkuOptions.db.profile["SkuChat"].WowTtsSpeed, SkuOptions.db.profile["SkuChat"].WowTtsVolume)
+					SkuOptions.Voice:OutputStringBTtts(tSpeakText, false, false, 1)
 				else
-					C_VoiceChat.StopSpeakingText()
+					SkuOptions.Voice:StopAllOutputs()--C_VoiceChat.StopSpeakingText()
 					C_Timer.After(0.05, function() 
-						C_VoiceChat.SpeakText(SkuOptions.db.profile["SkuChat"].WowTtsVoice - 1, tSpeakText, 4, SkuOptions.db.profile["SkuChat"].WowTtsSpeed, SkuOptions.db.profile["SkuChat"].WowTtsVolume)
+						SkuOptions.Voice:OutputStringBTtts(tSpeakText, false, false, 1)
 					end)
 				end				
 				return
@@ -191,7 +192,7 @@ function SkuOptions:SlashFunc(input, aSilent)
 				return
 			end
 			if #SkuOptions.Menu == 0 or SkuOptions:IsMenuOpen() == false then
-				_G["OnSkuOptionsMain"]:GetScript("OnClick")(_G["OnSkuOptionsMain"], SkuOptions.db.profile["SkuOptions"].SkuKeyBinds["SKU_KEY_OPENMENU"].key)
+				_G["OnSkuOptionsMain"]:GetScript("OnClick")(_G["OnSkuOptionsMain"], SkuOptions.db.profile["SkuOptions"].SkuKeyBinds["SKU_KEY_OPENMENU"].key, true)
 			end
 
 			local tMenu = SkuOptions.Menu
@@ -222,11 +223,11 @@ function SkuOptions:SlashFunc(input, aSilent)
 						SkuOptions:VocalizeCurrentMenuName()--SkuOptions.currentMenuPosition:BuildChildren(SkuOptions.currentMenuPosition)
 					else
 						SkuOptions.currentMenuPosition:OnSelect()
-						SkuOptions:CloseMenu()
+						SkuOptions:CloseMenu(true)
 					end
 				else
 					SkuOptions.currentMenuPosition:OnSelect()
-					SkuOptions:CloseMenu()
+					SkuOptions:CloseMenu(true)
 				end
 			end
 		elseif fields[1] == "mmreset" then
@@ -398,50 +399,54 @@ end
 
 ---------------------------------------------------------------------------------------------------------------------------------------
 ---@param aStartStop bool
-function SkuOptions:StartStopBackgroundSound(aStartStop, aSoundFile)
+function SkuOptions:StartStopBackgroundSound(aStartStop, aSoundFile, aHandle)
 	aSoundFile = aSoundFile or SkuOptions.db.profile[MODULE_NAME].backgroundSound
 
+	aHandle = aHandle or "default"
+	SkuOptions.currentBackgroundSoundTimerHandle = SkuOptions.currentBackgroundSoundTimerHandle or {}
+	SkuOptions.currentBackgroundSoundHandle = SkuOptions.currentBackgroundSoundHandle or {}
+
 	if aStartStop == true then
-		if SkuOptions.currentBackgroundSoundHandle == nil then
+		if SkuOptions.currentBackgroundSoundHandle[aHandle] == nil then
 			local willPlay, soundHandle = PlaySoundFile("Interface\\AddOns\\Sku\\SkuZOptions\\assets\\audio\\background\\"..aSoundFile, "Talking Head")
 			if soundHandle then
-				SkuOptions.currentBackgroundSoundHandle = soundHandle
-				if SkuOptions.currentBackgroundSoundTimerHandle then
-					SkuOptions.currentBackgroundSoundTimerHandle:Cancel()
-					SkuOptions.currentBackgroundSoundTimerHandle = nil
+				SkuOptions.currentBackgroundSoundHandle[aHandle] = soundHandle
+				if SkuOptions.currentBackgroundSoundTimerHandle[aHandle] then
+					SkuOptions.currentBackgroundSoundTimerHandle[aHandle]:Cancel()
+					SkuOptions.currentBackgroundSoundTimerHandle[aHandle] = nil
 				end
-				if SkuOptions.currentBackgroundSoundTimerHandle == nil then
-					SkuOptions.currentBackgroundSoundTimerHandle = C_Timer.NewTimer(SkuCore.BackgroundSoundFilesLen[aSoundFile], function()
+				if SkuOptions.currentBackgroundSoundTimerHandle[aHandle] == nil then
+					SkuOptions.currentBackgroundSoundTimerHandle[aHandle] = C_Timer.NewTimer(SkuCore.BackgroundSoundFilesLen[aSoundFile], function()
 						--StopSound(SkuOptions.currentBackgroundSoundHandle, 0)
-						SkuOptions.currentBackgroundSoundTimerHandle = nil
-						SkuOptions.currentBackgroundSoundHandle = nil
+						SkuOptions.currentBackgroundSoundTimerHandle[aHandle] = nil
+						SkuOptions.currentBackgroundSoundHandle[aHandle] = nil
 						SkuOptions:StartStopBackgroundSound(true)
 					end)
 				else
-					if SkuOptions.currentBackgroundSoundTimerHandle then
-						SkuOptions.currentBackgroundSoundTimerHandle:Cancel()
-						SkuOptions.currentBackgroundSoundTimerHandle = nil
+					if SkuOptions.currentBackgroundSoundTimerHandle[aHandle] then
+						SkuOptions.currentBackgroundSoundTimerHandle[aHandle]:Cancel()
+						SkuOptions.currentBackgroundSoundTimerHandle[aHandle] = nil
 					end
-					SkuOptions.currentBackgroundSoundTimerHandle = nil
-					SkuOptions.currentBackgroundSoundTimerHandle = C_Timer.NewTimer(SkuCore.BackgroundSoundFilesLen[aSoundFile], function()
-						SkuOptions.currentBackgroundSoundTimerHandle = nil
-						SkuOptions.currentBackgroundSoundHandle = nil
+					SkuOptions.currentBackgroundSoundTimerHandle[aHandle] = nil
+					SkuOptions.currentBackgroundSoundTimerHandle[aHandle] = C_Timer.NewTimer(SkuCore.BackgroundSoundFilesLen[aSoundFile], function()
+						SkuOptions.currentBackgroundSoundTimerHandle[aHandle] = nil
+						SkuOptions.currentBackgroundSoundHandle[aHandle] = nil
 						SkuOptions:StartStopBackgroundSound(true)
 					end)
 				end
 			end
 		else
-			StopSound(SkuOptions.currentBackgroundSoundHandle, 0)
-			SkuOptions.currentBackgroundSoundHandle = nil
+			StopSound(SkuOptions.currentBackgroundSoundHandle[aHandle], 0)
+			SkuOptions.currentBackgroundSoundHandle[aHandle] = nil
 		end
 	elseif aStartStop == false then
-		if SkuOptions.currentBackgroundSoundHandle ~= nil then
-			StopSound(SkuOptions.currentBackgroundSoundHandle, 0)
-			SkuOptions.currentBackgroundSoundHandle = nil
+		if SkuOptions.currentBackgroundSoundHandle[aHandle] ~= nil then
+			StopSound(SkuOptions.currentBackgroundSoundHandle[aHandle], 0)
+			SkuOptions.currentBackgroundSoundHandle[aHandle] = nil
 		end
-		if SkuOptions.currentBackgroundSoundTimerHandle then
-			SkuOptions.currentBackgroundSoundTimerHandle:Cancel()
-			SkuOptions.currentBackgroundSoundTimerHandle = nil
+		if SkuOptions.currentBackgroundSoundTimerHandle[aHandle] then
+			SkuOptions.currentBackgroundSoundTimerHandle[aHandle]:Cancel()
+			SkuOptions.currentBackgroundSoundTimerHandle[aHandle] = nil
 		end
 	end
 end
@@ -789,6 +794,7 @@ function SkuOptions:CreateMainFrame()
 	SkuOptions.InteractMove = false
 
 	tFrame:SetScript("OnClick", function(self, a, b)
+		dprint("OnSkuOptionsMain OnClick", self, a, b)
 		if a == SkuOptions.db.profile["SkuOptions"].SkuKeyBinds["SKU_KEY_STOPTTSOUTPUT"].key then
 			SkuOptions.Voice:StopOutputEmptyQueue()
 		end
@@ -1238,15 +1244,20 @@ function SkuOptions:CreateMainFrame()
 				end
 				
 
-				SkuOptions.Voice:OutputStringBTtts(L["Menu;closed"], false, true, 0.3, true)
+				if b ~= true then
+					SkuOptions.Voice:OutputStringBTtts(L["Menu;closed"], false, true, 0.3, false)
+				end
 				SkuCore.Debug("", L["Menu;closed"], true)
 
 			else
 				self:Show()
 				SkuOptions.currentMenuPosition = SkuOptions.Menu[1]
 				PlaySound(811)
-				SkuOptions.Voice:OutputStringBTtts(L["Menu;open"], true, true, 0.3, true)
-				SkuOptions.Voice:OutputStringBTtts(SkuOptions.Menu[1].name, false, true, 0.3)
+				if b ~= true then
+					SkuOptions.Voice:OutputStringBTtts(L["Menu;open"], true, true, 0.3, false)
+					print("SkuOptions.Menu[1].name", SkuOptions.Menu[1].name)
+					SkuOptions.Voice:OutputStringBTtts(SkuOptions.Menu[1].name, false, true, 0.3)
+				end
 				SkuCore.Debug("", SkuOptions.currentMenuPosition.name, true)
 			end
 		end
@@ -2186,6 +2197,7 @@ end
 function SkuOptions:OnInitialize()
 	dprint("SkuOptions OnInitialize")
 
+Sku:MetricPoint("SkuOptions:OnInitialize start")	
 	if SkuOptions then
 		options.args["SkuOptions"] = SkuOptions.options
 		defaults.profile["SkuOptions"] = SkuOptions.defaults
@@ -2231,6 +2243,7 @@ function SkuOptions:OnInitialize()
 	options.args.profiles = LibStub("AceDBOptions-3.0"):GetOptionsTable(SkuOptions.db)
 
 	SkuOptions:UpdateMovedAceDbProfileValues()
+Sku:MetricPoint("UpdateMovedAceDbProfileValues")	
 
 	SkuOptions:SkuKeyBindsUpdate(true)
 
@@ -2243,10 +2256,12 @@ function SkuOptions:OnInitialize()
 	SkuOptions:RegisterEvent("CANCEL_LOOT_ROLL")
 	SkuOptions:RegisterEvent("LOOT_SLOT_CHANGED")
 
+Sku:MetricPoint("CreateControlFrame")		
 	SkuOptions:CreateControlFrame()
 	SkuOptions:CreateMainFrame()
 	SkuOptions.Filterstring = ""
 	SkuOptions:CreateMenuFrame()
+Sku:MetricPoint("SkuOptions:OnInitialize end")			
 end
 
 ---------------------------------------------------------------------------------------------------------------------------------------
@@ -2439,6 +2454,7 @@ end
 
 ---------------------------------------------------------------------------------------------------------------------------------------
 function SkuOptions:PLAYER_ENTERING_WORLD(...)
+Sku:MetricPoint("SkuOptions:PLAYER_ENTERING_WORLD start")	
 	local event, isInitialLogin, isReloadingUi = ...
 
 	if isInitialLogin == true or isReloadingUi == true then
@@ -2475,6 +2491,7 @@ function SkuOptions:PLAYER_ENTERING_WORLD(...)
 			tWidget:Show()
 		end
 	end
+Sku:MetricPoint("SkuOptions:PLAYER_ENTERING_WORLD end")		
 end
 
 ---------------------------------------------------------------------------------------------------------------------------------------
@@ -2531,16 +2548,19 @@ end
 ---@param aDuration number duration of the audio
 ---@param aDoNotOverride bool if this audio could be reseted by others
 function SkuOptions:VocalizeMultipartString(aStr, aReset, aWait, aDuration, aDoNotOverride, engine, aVocalizeAsIs)
-	--print("--VocalizeMultipartString", aStr)
+	dprint("--VocalizeMultipartString", aStr, aReset, aWait, aDuration, aDoNotOverride)
 
 	-- don't vocalize object numbers
 	local tTempHayStack = string.gsub(aStr, L["OBJECT"]..";%d+;", L["OBJECT"]..";")
 	aStr = tTempHayStack
 
+	local tOutputString = ""
+	--[[
 	if SkuOptions.db.profile["SkuOptions"].useBlizzTtsInMenu == true then
 		SkuOptions.Voice:OutputStringBTtts(aStr, aReset, aWait, 0.2, aDoNotOverride, false, nil, engine, nil, aVocalizeAsIs)
 		return
 	end
+	]]
 
 	if not engine then
 		local sep, fields = ";", {}
@@ -2548,16 +2568,18 @@ function SkuOptions:VocalizeMultipartString(aStr, aReset, aWait, aDuration, aDoN
 		aStr:gsub(pattern, function(c) fields[#fields+1] = c end)
 		if fields then
 			--first part (with q reset)
-			--if SkuAudioFileIndex[tostring(fields[1])] or tonumber(fields[x]) then --element is in string index
-				SkuOptions.Voice:OutputStringBTtts(fields[1], aReset, aWait, 0.2, aDoNotOverride, nil, nil, nil, nil, aVocalizeAsIs)
+			--if SkuAudioFileIndex[Sku.Loc][tostring(fields[1])] or tonumber(fields[x]) then --element is in string index
+				--SkuOptions.Voice:OutputStringBTtts(fields[1], aReset, aWait, 0.2, aDoNotOverride, nil, nil, nil, nil, aVocalizeAsIs)
+				tOutputString = tOutputString.." "..fields[1]
 			--else
 				--SkuOptions.Voice:Output(fields[1]:lower()..".mp3", true, true, 0.2)
 				--SkuOptions.Voice:OutputStringBTtts("Keine Audiodatei", true, true, 0.2)
 			--end
 			--remaining parts (w/o q reset)
 			for x = 2, #fields do
-				--if SkuAudioFileIndex[tostring(fields[x])] or tonumber(fields[x]) then --element is in string index
-					SkuOptions.Voice:OutputStringBTtts(fields[x], false, aWait, 0.2, aDoNotOverride, nil, nil, nil, nil, aVocalizeAsIs)
+				--if SkuAudioFileIndex[Sku.Loc][tostring(fields[x])] or tonumber(fields[x]) then --element is in string index
+					--SkuOptions.Voice:OutputStringBTtts(fields[x], false, aWait, 0.2, aDoNotOverride, nil, nil, nil, nil, aVocalizeAsIs)
+					tOutputString = tOutputString.." "..fields[x]
 					--else
 					--SkuOptions.Voice:Output(fields[x]:lower()..".mp3", false, true, 0.2)
 				--	SkuOptions.Voice:OutputStringBTtts("Keine Audiodatei", false, true, 0.2)
@@ -2566,13 +2588,18 @@ function SkuOptions:VocalizeMultipartString(aStr, aReset, aWait, aDuration, aDoN
 		end
 	else
 		SkuOptions.Voice:OutputStringBTtts(aStr, aReset, aWait, 0.2, aDoNotOverride, false, nil, engine, nil, aVocalizeAsIs)
+		return
+		--tOutputString = tOutputString.." "..aStr
+	end
+	if tOutputString ~= "" then
+		SkuOptions.Voice:OutputStringBTtts(tOutputString, aReset, aWait, 0.2, aDoNotOverride, false, nil, engine, nil, aVocalizeAsIs)
 	end
 end
 
 ---------------------------------------------------------------------------------------------------------------------------------------
 ---@param aReset bool reset queue
 function SkuOptions:VocalizeCurrentMenuName(aReset)
-	--print("--VocalizeCurrentMenuName", aReset, debugstack())
+	dprint("--VocalizeCurrentMenuName", aReset)--, debugstack())
 	
 	if aReset == nil then aReset = true end
 
@@ -2998,6 +3025,8 @@ function SkuOptions:IterateOptionsArgs(aArgTable, aParentMenu, tProfileParentPat
 	for i, v in SkuSpairs(aArgTable, function(t, a, b) if t[b].order and t[a].order then return t[b].order > t[a].order end end) do
 		if v.args and v.forAudioMenu ~= false then
 			local tParentMenu =  SkuOptions:InjectMenuItems(aParentMenu, {v.name}, SkuGenericMenuItem)
+			--tParentMenu.dynamic = true
+			tParentMenu.filterable = true
 			SkuOptions:IterateOptionsArgs(v.args, tParentMenu, tProfileParentPath[i])
 		else
 			if v.type == "toggle" then
@@ -3126,11 +3155,10 @@ end
 
 ---------------------------------------------------------------------------------------------------------------------------------------
 function SkuOptions:StopSounds(aNumberOfSounds)
-	--print("StopSounds", aNumberOfSounds, [[Interface\AddOns\]]..Sku.AudiodataPath..[[\assets\audio\silence_1s.mp3]])
 	if SkuOptions.db.profile["SkuCore"].playNPCGreetings == true then
 		return
 	end
-	local _, currentSoundHandle = PlaySoundFile([[Interface\AddOns\]]..Sku.AudiodataPath..[[\assets\audio\silence_1s.mp3]], "Dialog")--PlaySound(871, "Dialog")
+	local _, currentSoundHandle = PlaySoundFile([[Interface\AddOns\Sku\SkuAudioData\assets\audio\enUS\silence_1s.mp3]], "Dialog")--PlaySound(871, "Dialog")
 
 	if currentSoundHandle then
 		for i = 1, aNumberOfSounds do

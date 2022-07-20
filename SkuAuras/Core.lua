@@ -27,6 +27,8 @@ local CleuBase = {
 	dbuffListTarget = 38,
 	itemID = 40,
 	missType = 41,
+--key = 50
+--combo = 51
 }
 
 SkuAuras.ItemCDRepo = {}
@@ -404,29 +406,64 @@ end
 function SkuAuras:UNIT_TICKER(aUnitId)
 	local tUnitId = aUnitId
 
-	if not SkuAuras.UnitRepo[tUnitId] then
-		SkuAuras.UnitRepo[tUnitId] = {unitPower = 0, unitHealth = 0, unitTargetName = nil}
-		SkuAuras.UnitRepo[tUnitId].unitHealth = math.floor(UnitHealth(tUnitId) / (UnitHealthMax(tUnitId) / 100))
-		SkuAuras.UnitRepo[tUnitId].unitPower = math.floor(UnitPower(tUnitId) / (UnitPowerMax(tUnitId) / 100))
-	end
+	if tUnitId and UnitHealthMax(tUnitId) > 0 then
+		local tHealth
+		if UnitHealthMax(tUnitId) and UnitHealthMax(tUnitId) > 0 then
+			tHealth = math.floor(UnitHealth(tUnitId) / (UnitHealthMax(tUnitId) / 100))
+		end
+		local tPower
+		if UnitPowerMax(tUnitId) and UnitPowerMax(tUnitId) > 0 then
+			tPower = math.floor(UnitPower(tUnitId) / (UnitPowerMax(tUnitId) / 100))
+		end
 
-	if SkuAuras.UnitRepo[tUnitId].unitTargetName ~= UnitGUID(tUnitId.."target") then
-		SkuAuras.UnitRepo[tUnitId].unitTargetName = UnitGUID(tUnitId.."target")
+		if not SkuAuras.UnitRepo[tUnitId] then
+			SkuAuras.UnitRepo[tUnitId] = {unitPower = 0, unitHealth = 0, unitTargetName = nil}
+			SkuAuras.UnitRepo[tUnitId].unitHealth = tHealth
+			SkuAuras.UnitRepo[tUnitId].unitPower = tPower
+		end
 
-		--dprint("ooooooooooooooo target change for ", tUnitId)
-		--dprint("changed to", UnitName(tUnitId.."target"))
-		if UnitName(tUnitId.."target") then
-			local tNewTargetUnitId = SkuAuras:GetBestUnitId(UnitName(tUnitId.."target"))
+		if SkuAuras.UnitRepo[tUnitId].unitTargetName ~= UnitGUID(tUnitId.."target") then
+			SkuAuras.UnitRepo[tUnitId].unitTargetName = UnitGUID(tUnitId.."target")
+
+			--dprint("ooooooooooooooo target change for ", tUnitId)
+			--dprint("changed to", UnitName(tUnitId.."target"))
+			if UnitName(tUnitId.."target") then
+				local tNewTargetUnitId = SkuAuras:GetBestUnitId(UnitName(tUnitId.."target"))
+				local tEventData = {
+					GetTime(),
+					"UNIT_TARGETCHANGE",
+					nil,
+					tUnitId,
+					UnitName(tUnitId),
+					nil,
+					nil,
+					tNewTargetUnitId,
+					UnitName(tUnitId.."target"),
+					nil,
+					nil,
+					nil,
+					nil,
+					nil,
+				}
+				tEventData[35] = SkuAuras.UnitRepo[tUnitId].unitHealth,		
+				SkuAuras:COMBAT_LOG_EVENT_UNFILTERED("customCLEU", tEventData)
+			end
+		end
+
+
+
+		if SkuAuras.UnitRepo[tUnitId].unitHealth ~= tHealth then
+			SkuAuras.UnitRepo[tUnitId].unitHealth = tHealth
 			local tEventData = {
 				GetTime(),
-				"UNIT_TARGETCHANGE",
+				"UNIT_HEALTH",
 				nil,
 				tUnitId,
 				UnitName(tUnitId),
 				nil,
 				nil,
-				tNewTargetUnitId,
-				UnitName(tUnitId.."target"),
+				tUnitId,
+				UnitName(tUnitId),
 				nil,
 				nil,
 				nil,
@@ -436,53 +473,55 @@ function SkuAuras:UNIT_TICKER(aUnitId)
 			tEventData[35] = SkuAuras.UnitRepo[tUnitId].unitHealth,		
 			SkuAuras:COMBAT_LOG_EVENT_UNFILTERED("customCLEU", tEventData)
 		end
-	end
+		if UnitPowerMax(tUnitId) > 0 then
+			if SkuAuras.UnitRepo[tUnitId].unitPower ~= tPower then
+				SkuAuras.UnitRepo[tUnitId].unitPower = tPower
+				local tEventData = {
+					GetTime(),
+					"UNIT_POWER",
+					nil,
+					tUnitId,
+					UnitName(tUnitId),
+					nil,
+					nil,
+					tUnitId,
+					UnitName(tUnitId),
+					nil,
+					nil,
+					nil,
+					nil,
+					nil,
+					nil,
+				}
+				tEventData[36] = SkuAuras.UnitRepo[tUnitId].unitPower,		
+				SkuAuras:COMBAT_LOG_EVENT_UNFILTERED("customCLEU", tEventData)		
+			end
+		end
 
-
-
-	if SkuAuras.UnitRepo[tUnitId].unitHealth ~= math.floor(UnitHealth(tUnitId) / (UnitHealthMax(tUnitId) / 100)) then
-		SkuAuras.UnitRepo[tUnitId].unitHealth = math.floor(UnitHealth(tUnitId) / (UnitHealthMax(tUnitId) / 100))
-		local tEventData = {
-			GetTime(),
-			"UNIT_HEALTH",
-			nil,
-			tUnitId,
-			UnitName(tUnitId),
-			nil,
-			nil,
-			tUnitId,
-			UnitName(tUnitId),
-			nil,
-			nil,
-			nil,
-			nil,
-			nil,
-		}
-		tEventData[35] = SkuAuras.UnitRepo[tUnitId].unitHealth,		
-		SkuAuras:COMBAT_LOG_EVENT_UNFILTERED("customCLEU", tEventData)
-	end
-
-	if SkuAuras.UnitRepo[tUnitId].unitPower ~= math.floor(UnitPower(tUnitId) / (UnitPowerMax(tUnitId) / 100)) then
-		SkuAuras.UnitRepo[tUnitId].unitPower = math.floor(UnitPower(tUnitId) / (UnitPowerMax(tUnitId) / 100)) 
-		local tEventData = {
-			GetTime(),
-			"UNIT_POWER",
-			nil,
-			tUnitId,
-			UnitName(tUnitId),
-			nil,
-			nil,
-			tUnitId,
-			UnitName(tUnitId),
-			nil,
-			nil,
-			nil,
-			nil,
-			nil,
-			nil,
-		}
-		tEventData[36] = SkuAuras.UnitRepo[tUnitId].unitPower,		
-		SkuAuras:COMBAT_LOG_EVENT_UNFILTERED("customCLEU", tEventData)		
+		if tUnitId == "player" then
+			if SkuAuras.UnitRepo[tUnitId].unitCombo ~= GetComboPoints("player", "target") then
+				SkuAuras.UnitRepo[tUnitId].unitCombo = GetComboPoints("player", "target") or 0
+				local tEventData = {
+					GetTime(),
+					"UNIT_POWER",
+					nil,
+					tUnitId,
+					UnitName(tUnitId),
+					nil,
+					nil,
+					tUnitId,
+					UnitName(tUnitId),
+					nil,
+					nil,
+					nil,
+					nil,
+					nil,
+					nil,
+				}
+				tEventData[51] = SkuAuras.UnitRepo[tUnitId].unitCombo,		
+				SkuAuras:COMBAT_LOG_EVENT_UNFILTERED("customCLEU", tEventData)		
+			end
+		end			
 	end
 end
 
@@ -738,6 +777,7 @@ if tEventData[2] ~= "KEY_PRESS" then
 				spellName = tEventData[CleuBase.spellName],
 				unitHealthPlayer = tEventData[35],
 				unitPowerPlayer = tEventData[36],
+				unitComboPlayer = tEventData[51],
 				buffListTarget = tEventData[37],
 				debuffListTarget = tEventData[38],
 				tSourceUnitIDCannAttack = tSourceUnitIDCannAttack,
