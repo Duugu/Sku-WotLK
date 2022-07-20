@@ -515,7 +515,6 @@ function SkuCore:Build_BagnonInventoryFrame(aParentChilds)
 	}
 
 	for x = 1, #tBarBagSlots do
-		print(x)
 		local containerFrameName = "CharacterBag".. x.."Slot"
 		if tBarBagSlots[x] then
 			local tFriendlyName = L["Bag-slot"] .. " " .. (x)
@@ -637,11 +636,11 @@ function SkuCore:Build_CharacterFrame(aParentChilds)
 		}
 		tParentEquipment[tFriendlyName].childs = SkuCore:IterateChildren(tParentEquipment[tFriendlyName].obj, 2)
 
-		print(tParentEquipment[tFriendlyName].childs["GearManagerToggleButton"])
+		--print(tParentEquipment[tFriendlyName].childs["GearManagerToggleButton"])
 		for x = 1, #tParentEquipment[tFriendlyName].childs do
-			print(x)
+			--print(x)
 			if tParentEquipment[tFriendlyName].childs[x] == "GearManagerToggleButton" then
-				print("GearManagerToggleButton")
+				--print("GearManagerToggleButton")
 				tParentEquipment[tFriendlyName].childs[x] = nil
 				tParentEquipment[tFriendlyName].childs["GearManagerToggleButton"] = nil
 			end

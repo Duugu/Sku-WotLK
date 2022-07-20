@@ -4,6 +4,7 @@ SkuDB.ContinentIds = {
     [0] = {Name_lang = {["deDE"] = "Östliche Königreiche", ["enUS"] = "Eastern Kingdoms",},}, --"Östliche Königreiche"},
     [1] = {Name_lang =  {["deDE"] = "Kalimdor", ["enUS"] = "Kalimdor",},}, --"Kalimdor"},
     [530] = {Name_lang =  {["deDE"] = "Scherbenwelt", ["enUS"] = "Outland",},}, --"Scherbenwelt"},
+    [571] = {Name_lang =  {["deDE"] = "Nordrend", ["enUS"] = "Northrend",},}, --"Scherbenwelt"},
 }
 
 SkuDB.ExternalMapID = { --https://wow.tools/dbc/?dbc=uimap&build=1.13.7.38386&locale=deDE#page=1
