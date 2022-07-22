@@ -71,20 +71,6 @@ SkuChat.options = {
 				return SkuOptions.db.profile[MODULE_NAME].WowTtsVoice
 			end,
 		},
-		WowTtsAlternativeVoice = {
-			order = 3,
-			name = L["TTS alternative voice"],
-			desc = "",
-			type = "select",
-			values = SkuChat.WowTtsVoices,
-			set = function(info,val)
-				SkuOptions.db.profile[MODULE_NAME].WowTtsAlternativeVoice = val
-			end,
-			get = function(info)
-				return SkuOptions.db.profile[MODULE_NAME].WowTtsAlternativeVoice
-			end,
-		},
-
 		WowTtsSpeed = {
 			order = 4,
 			name = L["TTS speed"],
@@ -250,7 +236,6 @@ SkuChat.defaults = {
 		audioOnMessageEnd = false,
 	},
 	WowTtsVoice = 1,
-	WowTtsAlternativeVoice = 1,
 	WowTtsSpeed = 3,
 	WowTtsVolume = 50,
 	WowTtsTags = true,

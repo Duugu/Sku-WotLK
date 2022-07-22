@@ -1524,3 +1524,6 @@ L["Eigene combopunkte"] = "Your combo points"
 L["Deine combopunkte auf dein aktuelles ziel"] = "Your combo points on the current target"
 
 L["TTS alternative voice"] = "TTS alternative voice"
+
+L["socket"] = "socket"
+L["current gem:"] = "current gem:"

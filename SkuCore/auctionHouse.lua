@@ -1341,7 +1341,6 @@ function SkuCore:AuctionHouseMenuBuilder()
 
                         
                         tNewMenuSubSubEntry.textFull = aGossipItemTable.textFull
-                        
 
                      
                         tNewMenuSubSubEntry.OnAction = function(self, aValue, aName)
@@ -1368,7 +1367,6 @@ function SkuCore:AuctionHouseMenuBuilder()
                            _G["AuctionFrameTab3"]:GetScript("OnClick")(_G["AuctionFrameTab3"], "LeftButton") 
                            _G["AuctionsItemButton"]:GetScript("OnDragStart")(_G["AuctionsItemButton"], "LeftButton") 
                            ClearCursor()
-print(aGossipItemTable, aGossipItemTable.containerFrameName)                           
                            _G[aGossipItemTable.containerFrameName]:GetScript("OnDragStart")(_G[aGossipItemTable.containerFrameName], "LeftButton") 
                            ClickAuctionSellItemButton() 
                      

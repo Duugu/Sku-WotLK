@@ -55,9 +55,9 @@ local defaults = {
 	}
 
 ---------------------------------------------------------------------------------------------------------------------------------------
-function SkuOptions:CloseMenu(aSilent)
+function SkuOptions:CloseMenu()
 	if SkuOptions:IsMenuOpen() == true then
-		_G["OnSkuOptionsMain"]:GetScript("OnClick")(_G["OnSkuOptionsMain"], SkuOptions.db.profile["SkuOptions"].SkuKeyBinds["SKU_KEY_OPENMENU"].key, aSilent)
+		_G["OnSkuOptionsMain"]:GetScript("OnClick")(_G["OnSkuOptionsMain"], SkuOptions.db.profile["SkuOptions"].SkuKeyBinds["SKU_KEY_OPENMENU"].key)
 	end
 end
 
@@ -155,13 +155,12 @@ function SkuOptions:SlashFunc(input, aSilent)
 				InviteToGroup(SkuChat.InvitePlayerName)
 				local tSpeakText = SkuChat.InvitePlayerName..L[" eingeladen"]
 				if IsMacClient() == true then
-					SkuOptions.Voice:StopAllOutputs()--C_VoiceChat.StopSpeakingText()
-					--C_VoiceChat.SpeakText(SkuOptions.db.profile["SkuChat"].WowTtsVoice - 1, tSpeakText,  4, SkuOptions.db.profile["SkuChat"].WowTtsSpeed, SkuOptions.db.profile["SkuChat"].WowTtsVolume)
-					SkuOptions.Voice:OutputStringBTtts(tSpeakText, false, false, 1)
+					C_VoiceChat.StopSpeakingText()
+					C_VoiceChat.SpeakText(SkuOptions.db.profile["SkuChat"].WowTtsVoice - 1, tSpeakText,  4, SkuOptions.db.profile["SkuChat"].WowTtsSpeed, SkuOptions.db.profile["SkuChat"].WowTtsVolume)
 				else
-					SkuOptions.Voice:StopAllOutputs()--C_VoiceChat.StopSpeakingText()
+					C_VoiceChat.StopSpeakingText()
 					C_Timer.After(0.05, function() 
-						SkuOptions.Voice:OutputStringBTtts(tSpeakText, false, false, 1)
+						C_VoiceChat.SpeakText(SkuOptions.db.profile["SkuChat"].WowTtsVoice - 1, tSpeakText, 4, SkuOptions.db.profile["SkuChat"].WowTtsSpeed, SkuOptions.db.profile["SkuChat"].WowTtsVolume)
 					end)
 				end				
 				return
@@ -192,7 +191,7 @@ function SkuOptions:SlashFunc(input, aSilent)
 				return
 			end
 			if #SkuOptions.Menu == 0 or SkuOptions:IsMenuOpen() == false then
-				_G["OnSkuOptionsMain"]:GetScript("OnClick")(_G["OnSkuOptionsMain"], SkuOptions.db.profile["SkuOptions"].SkuKeyBinds["SKU_KEY_OPENMENU"].key, true)
+				_G["OnSkuOptionsMain"]:GetScript("OnClick")(_G["OnSkuOptionsMain"], SkuOptions.db.profile["SkuOptions"].SkuKeyBinds["SKU_KEY_OPENMENU"].key)
 			end
 
 			local tMenu = SkuOptions.Menu
@@ -223,11 +222,11 @@ function SkuOptions:SlashFunc(input, aSilent)
 						SkuOptions:VocalizeCurrentMenuName()--SkuOptions.currentMenuPosition:BuildChildren(SkuOptions.currentMenuPosition)
 					else
 						SkuOptions.currentMenuPosition:OnSelect()
-						SkuOptions:CloseMenu(true)
+						SkuOptions:CloseMenu()
 					end
 				else
 					SkuOptions.currentMenuPosition:OnSelect()
-					SkuOptions:CloseMenu(true)
+					SkuOptions:CloseMenu()
 				end
 			end
 		elseif fields[1] == "mmreset" then
@@ -794,7 +793,15 @@ function SkuOptions:CreateMainFrame()
 	SkuOptions.InteractMove = false
 
 	tFrame:SetScript("OnClick", function(self, a, b)
-		dprint("OnSkuOptionsMain OnClick", self, a, b)
+
+		--toggle mm warning background sound
+		if SkuOptions.db.profile["SkuNav"].showSkuMM == true or SkuOptions.db.profile["SkuNav"].showRoutesOnMinimap == true then
+			SkuOptions:StartStopBackgroundSound(false, nil, "map")
+			SkuOptions:StartStopBackgroundSound(true, "catpurrwaterdrop.mp3", "map")
+		else
+			SkuOptions:StartStopBackgroundSound(false, nil, "map")
+		end			
+
 		if a == SkuOptions.db.profile["SkuOptions"].SkuKeyBinds["SKU_KEY_STOPTTSOUTPUT"].key then
 			SkuOptions.Voice:StopOutputEmptyQueue()
 		end
@@ -1244,20 +1251,15 @@ function SkuOptions:CreateMainFrame()
 				end
 				
 
-				if b ~= true then
-					SkuOptions.Voice:OutputStringBTtts(L["Menu;closed"], false, true, 0.3, false)
-				end
+				SkuOptions.Voice:OutputStringBTtts(L["Menu;closed"], false, true, 0.3, true)
 				SkuCore.Debug("", L["Menu;closed"], true)
 
 			else
 				self:Show()
 				SkuOptions.currentMenuPosition = SkuOptions.Menu[1]
 				PlaySound(811)
-				if b ~= true then
-					SkuOptions.Voice:OutputStringBTtts(L["Menu;open"], true, true, 0.3, false)
-					print("SkuOptions.Menu[1].name", SkuOptions.Menu[1].name)
-					SkuOptions.Voice:OutputStringBTtts(SkuOptions.Menu[1].name, false, true, 0.3)
-				end
+				SkuOptions.Voice:OutputStringBTtts(L["Menu;open"], true, true, 0.3, true)
+				SkuOptions.Voice:OutputStringBTtts(SkuOptions.Menu[1].name, false, true, 0.3)
 				SkuCore.Debug("", SkuOptions.currentMenuPosition.name, true)
 			end
 		end
@@ -2196,8 +2198,8 @@ end
 ---------------------------------------------------------------------------------------------------------------------------------------
 function SkuOptions:OnInitialize()
 	dprint("SkuOptions OnInitialize")
-
-Sku:MetricPoint("SkuOptions:OnInitialize start")	
+	Sku:MetricPoint("SkuOptions:OnInitialize start")	
+	
 	if SkuOptions then
 		options.args["SkuOptions"] = SkuOptions.options
 		defaults.profile["SkuOptions"] = SkuOptions.defaults
@@ -2243,7 +2245,6 @@ Sku:MetricPoint("SkuOptions:OnInitialize start")
 	options.args.profiles = LibStub("AceDBOptions-3.0"):GetOptionsTable(SkuOptions.db)
 
 	SkuOptions:UpdateMovedAceDbProfileValues()
-Sku:MetricPoint("UpdateMovedAceDbProfileValues")	
 
 	SkuOptions:SkuKeyBindsUpdate(true)
 
@@ -2256,12 +2257,10 @@ Sku:MetricPoint("UpdateMovedAceDbProfileValues")
 	SkuOptions:RegisterEvent("CANCEL_LOOT_ROLL")
 	SkuOptions:RegisterEvent("LOOT_SLOT_CHANGED")
 
-Sku:MetricPoint("CreateControlFrame")		
 	SkuOptions:CreateControlFrame()
 	SkuOptions:CreateMainFrame()
 	SkuOptions.Filterstring = ""
 	SkuOptions:CreateMenuFrame()
-Sku:MetricPoint("SkuOptions:OnInitialize end")			
 end
 
 ---------------------------------------------------------------------------------------------------------------------------------------
@@ -2454,7 +2453,6 @@ end
 
 ---------------------------------------------------------------------------------------------------------------------------------------
 function SkuOptions:PLAYER_ENTERING_WORLD(...)
-Sku:MetricPoint("SkuOptions:PLAYER_ENTERING_WORLD start")	
 	local event, isInitialLogin, isReloadingUi = ...
 
 	if isInitialLogin == true or isReloadingUi == true then
@@ -2491,7 +2489,6 @@ Sku:MetricPoint("SkuOptions:PLAYER_ENTERING_WORLD start")
 			tWidget:Show()
 		end
 	end
-Sku:MetricPoint("SkuOptions:PLAYER_ENTERING_WORLD end")		
 end
 
 ---------------------------------------------------------------------------------------------------------------------------------------
@@ -2548,38 +2545,33 @@ end
 ---@param aDuration number duration of the audio
 ---@param aDoNotOverride bool if this audio could be reseted by others
 function SkuOptions:VocalizeMultipartString(aStr, aReset, aWait, aDuration, aDoNotOverride, engine, aVocalizeAsIs)
-	dprint("--VocalizeMultipartString", aStr, aReset, aWait, aDuration, aDoNotOverride)
+	--print("--VocalizeMultipartString", aStr)
 
 	-- don't vocalize object numbers
 	local tTempHayStack = string.gsub(aStr, L["OBJECT"]..";%d+;", L["OBJECT"]..";")
 	aStr = tTempHayStack
 
-	local tOutputString = ""
-	--[[
-	if SkuOptions.db.profile["SkuOptions"].useBlizzTtsInMenu == true then
-		SkuOptions.Voice:OutputStringBTtts(aStr, aReset, aWait, 0.2, aDoNotOverride, false, nil, engine, nil, aVocalizeAsIs)
-		return
-	end
-	]]
-
+	--if SkuOptions.db.profile["SkuOptions"].useBlizzTtsInMenu == true then
+	SkuOptions.Voice:OutputStringBTtts(aStr, aReset, aWait, 0.2, aDoNotOverride, false, nil, engine, nil, aVocalizeAsIs)
+	return
+	--end
+--[[
 	if not engine then
 		local sep, fields = ";", {}
 		local pattern = string.format("([^%s]+)", sep)
 		aStr:gsub(pattern, function(c) fields[#fields+1] = c end)
 		if fields then
 			--first part (with q reset)
-			--if SkuAudioFileIndex[Sku.Loc][tostring(fields[1])] or tonumber(fields[x]) then --element is in string index
-				--SkuOptions.Voice:OutputStringBTtts(fields[1], aReset, aWait, 0.2, aDoNotOverride, nil, nil, nil, nil, aVocalizeAsIs)
-				tOutputString = tOutputString.." "..fields[1]
+			--if SkuAudioFileIndex[tostring(fields[1])] or tonumber(fields[x]) then --element is in string index
+				SkuOptions.Voice:OutputStringBTtts(fields[1], aReset, aWait, 0.2, aDoNotOverride, nil, nil, nil, nil, aVocalizeAsIs)
 			--else
 				--SkuOptions.Voice:Output(fields[1]:lower()..".mp3", true, true, 0.2)
 				--SkuOptions.Voice:OutputStringBTtts("Keine Audiodatei", true, true, 0.2)
 			--end
 			--remaining parts (w/o q reset)
 			for x = 2, #fields do
-				--if SkuAudioFileIndex[Sku.Loc][tostring(fields[x])] or tonumber(fields[x]) then --element is in string index
-					--SkuOptions.Voice:OutputStringBTtts(fields[x], false, aWait, 0.2, aDoNotOverride, nil, nil, nil, nil, aVocalizeAsIs)
-					tOutputString = tOutputString.." "..fields[x]
+				--if SkuAudioFileIndex[tostring(fields[x])] or tonumber(fields[x]) then --element is in string index
+					SkuOptions.Voice:OutputStringBTtts(fields[x], false, aWait, 0.2, aDoNotOverride, nil, nil, nil, nil, aVocalizeAsIs)
 					--else
 					--SkuOptions.Voice:Output(fields[x]:lower()..".mp3", false, true, 0.2)
 				--	SkuOptions.Voice:OutputStringBTtts("Keine Audiodatei", false, true, 0.2)
@@ -2588,18 +2580,14 @@ function SkuOptions:VocalizeMultipartString(aStr, aReset, aWait, aDuration, aDoN
 		end
 	else
 		SkuOptions.Voice:OutputStringBTtts(aStr, aReset, aWait, 0.2, aDoNotOverride, false, nil, engine, nil, aVocalizeAsIs)
-		return
-		--tOutputString = tOutputString.." "..aStr
 	end
-	if tOutputString ~= "" then
-		SkuOptions.Voice:OutputStringBTtts(tOutputString, aReset, aWait, 0.2, aDoNotOverride, false, nil, engine, nil, aVocalizeAsIs)
-	end
+]]
 end
 
 ---------------------------------------------------------------------------------------------------------------------------------------
 ---@param aReset bool reset queue
 function SkuOptions:VocalizeCurrentMenuName(aReset)
-	dprint("--VocalizeCurrentMenuName", aReset)--, debugstack())
+	--print("--VocalizeCurrentMenuName", aReset, debugstack())
 	
 	if aReset == nil then aReset = true end
 
@@ -2772,6 +2760,7 @@ local function SkuIterateGossipList(aGossipListTable, aParentMenuTable, aTab)
 					tNewMenuEntry.BuildChildren = function(self)
 						if (aGossipListTable[index].isBag and CursorHasItem()) or not aGossipListTable[index].isBag then
 							self.children = {}
+
 							local tNewSubMenuEntry = SkuOptions:InjectMenuItems(self, {L["Left click"]}, SkuGenericMenuItem)
 							if aGossipListTable[index].containerFrameName then
 								tNewSubMenuEntry.macrotext = "/click "..aGossipListTable[index].containerFrameName.." LeftButton\r\n/script SkuCore:CheckFrames()"
@@ -2782,9 +2771,11 @@ local function SkuIterateGossipList(aGossipListTable, aParentMenuTable, aTab)
 										end
 										if aGossipListTable[index].obj:GetParent():GetName() == "StaticPopup1" then
 											if string.find(aGossipListTable[index].obj:GetName(), "StaticPopup") and string.find(aGossipListTable[index].obj:GetName(), "Button1") then
-												tNewSubMenuEntry.macrotext = "/script StaticPopup1Button1:GetScript(\"OnClick\")(_G[\"StaticPopup1Button1\"]) SkuCore:CheckFrames()"
+												--tNewSubMenuEntry.macrotext = "/script StaticPopup1Button1:GetScript(\"OnClick\")(_G[\"StaticPopup1Button1\"]) SkuCore:CheckFrames()"
+												tNewSubMenuEntry.macrotext = [[/click StaticPopup1Button1 LeftButton /script SkuCore:CheckFrames()]]
 											elseif string.find(aGossipListTable[index].obj:GetName(), "StaticPopup") and string.find(aGossipListTable[index].obj:GetName(), "Button2") then
-												tNewSubMenuEntry.macrotext = "/script StaticPopup1Button1:GetScript(\"OnClick\")(_G[\"StaticPopup1Button2\"]) SkuCore:CheckFrames()"
+												--tNewSubMenuEntry.macrotext = "/script StaticPopup1Button1:GetScript(\"OnClick\")(_G[\"StaticPopup1Button2\"]) SkuCore:CheckFrames()"
+												tNewSubMenuEntry.macrotext = [[/click StaticPopup1Button2 LeftButton /script SkuCore:CheckFrames()]]
 											end
 										end
 									end
@@ -2806,6 +2797,7 @@ local function SkuIterateGossipList(aGossipListTable, aParentMenuTable, aTab)
 									end
 								end
 							end
+
 							local tNewSubMenuEntry = SkuOptions:InjectMenuItems(self, {L["Right click"]}, SkuGenericMenuItem)
 							if aGossipListTable[index].containerFrameName then
 								tNewSubMenuEntry.macrotext = "/click "..aGossipListTable[index].containerFrameName.." RightButton\r\n/script SkuCore:CheckFrames()"
@@ -2828,7 +2820,9 @@ local function SkuIterateGossipList(aGossipListTable, aParentMenuTable, aTab)
 								end
 							end
 
-							if aGossipListTable[index].containerFrameName then
+
+
+							if aGossipListTable[index].containerFrameName and _G[aGossipListTable[index].containerFrameName] then
 								if _G[aGossipListTable[index].containerFrameName].GetBag and _G[aGossipListTable[index].containerFrameName]:GetBag() and _G[aGossipListTable[index].containerFrameName]:GetID() then
 									local tNewSubMenuEntry = SkuOptions:InjectMenuItems(self, {L["Socketing"]}, SkuGenericMenuItem)
 									tNewSubMenuEntry.macrotext = "/script SocketContainerItem(".._G[aGossipListTable[index].containerFrameName]:GetBag()..", ".._G[aGossipListTable[index].containerFrameName]:GetID()..") SkuCore:CheckFrames()"
@@ -3155,10 +3149,11 @@ end
 
 ---------------------------------------------------------------------------------------------------------------------------------------
 function SkuOptions:StopSounds(aNumberOfSounds)
+	--print("StopSounds", aNumberOfSounds, [[Interface\AddOns\]]..Sku.AudiodataPath..[[\assets\audio\silence_1s.mp3]])
 	if SkuOptions.db.profile["SkuCore"].playNPCGreetings == true then
 		return
 	end
-	local _, currentSoundHandle = PlaySoundFile([[Interface\AddOns\Sku\SkuAudioData\assets\audio\enUS\silence_1s.mp3]], "Dialog")--PlaySound(871, "Dialog")
+	local _, currentSoundHandle = PlaySoundFile([[Interface\AddOns\]]..Sku.AudiodataPath..[[\assets\audio\silence_1s.mp3]], "Dialog")--PlaySound(871, "Dialog")
 
 	if currentSoundHandle then
 		for i = 1, aNumberOfSounds do

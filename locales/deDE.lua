@@ -1519,3 +1519,6 @@ L["Eigene combopunkte"] = "Eigene combopunkte"
 L["Deine combopunkte auf dein aktuelles ziel"] = "Deine combopunkte auf dein aktuelles ziel"
 
 L["TTS alternative voice"] = "Alternative TTS stimme"
+
+L["socket"] = "sockel"
+L["current gem:"] = "aktueller edelstein:"
