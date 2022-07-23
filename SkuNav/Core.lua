@@ -66,6 +66,9 @@ function SkuNav:CreateWaypointCache(aAddLocalizedNames)
 	WaypointCache = {}
 	WaypointCacheLookupAll = {}
 	WaypointCacheLookupPerContintent = {}
+	for i, v in pairs(SkuDB.ContinentIds) do
+		WaypointCacheLookupPerContintent[i] = {}
+	end
 
 	--add creatures
 	for i, v in pairs(SkuDB.NpcData.Names[Sku.Loc]) do
@@ -94,49 +97,51 @@ function SkuNav:CreateWaypointCache(aAddLocalizedNames)
 							end
 							for sp = 1, tNumberOfSpawns do
 								local _, worldPosition = C_Map.GetWorldPosFromMapPos(isUiMap, CreateVector2D(vs[sp][1] / 100, vs[sp][2] / 100))
-								local tWorldX, tWorldY = worldPosition:GetXY()
+								if worldPosition then
+									local tWorldX, tWorldY = worldPosition:GetXY()
 
-								local tNewIndex = #WaypointCache + 1
-								WaypointCacheLookupAll[v[1]..tRolesString..";"..tData.AreaName_lang[Sku.Loc]..";"..sp..";"..vs[sp][1]..";"..vs[sp][2]] = tNewIndex
-								if not WaypointCacheLookupPerContintent[tData.ContinentID] then
-									WaypointCacheLookupPerContintent[tData.ContinentID] = {}
-								end
-								WaypointCacheLookupPerContintent[tData.ContinentID][tNewIndex] = v[1]..tRolesString..";"..tData.AreaName_lang[Sku.Loc]..";"..sp..";"..vs[sp][1]..";"..vs[sp][2]
-								WaypointCache[tNewIndex] = {
-									name = v[1]..tRolesString..";"..tData.AreaName_lang[Sku.Loc]..";"..sp..";"..vs[sp][1]..";"..vs[sp][2],
-									role = tRolesString,
-									typeId = 2,
-									dbIndex = i,
-									contintentId = tData.ContinentID,
-									areaId = is,
-									uiMapId = isUiMap,
-									worldX = tWorldX,
-									worldY = tWorldY,
-									createdAt = GetTime(),
-									createdBy = "SkuNav",
-									size = 1,
-									spawnNr = sp,
-									links = {
-										byId = nil,
-										byName = nil,
-									},
-								}
-								if aAddLocalizedNames then
-									for _, tLocale in pairs(aAddLocalizedNames) do
-										local tSubname = SkuDB.NpcData.Names[tLocale][i][2]
-										local tRolesString = ""
-										if not tSubname then
-											local tRoles = SkuNav:GetNpcRoles(v[1], i, tLocale)
-											if #tRoles > 0 then
-												for i, v in pairs(tRoles) do
-													tRolesString = tRolesString..";"..v
+									local tNewIndex = #WaypointCache + 1
+									WaypointCacheLookupAll[v[1]..tRolesString..";"..tData.AreaName_lang[Sku.Loc]..";"..sp..";"..vs[sp][1]..";"..vs[sp][2]] = tNewIndex
+									if not WaypointCacheLookupPerContintent[tData.ContinentID] then
+										WaypointCacheLookupPerContintent[tData.ContinentID] = {}
+									end
+									WaypointCacheLookupPerContintent[tData.ContinentID][tNewIndex] = v[1]..tRolesString..";"..tData.AreaName_lang[Sku.Loc]..";"..sp..";"..vs[sp][1]..";"..vs[sp][2]
+									WaypointCache[tNewIndex] = {
+										name = v[1]..tRolesString..";"..tData.AreaName_lang[Sku.Loc]..";"..sp..";"..vs[sp][1]..";"..vs[sp][2],
+										role = tRolesString,
+										typeId = 2,
+										dbIndex = i,
+										contintentId = tData.ContinentID,
+										areaId = is,
+										uiMapId = isUiMap,
+										worldX = tWorldX,
+										worldY = tWorldY,
+										createdAt = GetTime(),
+										createdBy = "SkuNav",
+										size = 1,
+										spawnNr = sp,
+										links = {
+											byId = nil,
+											byName = nil,
+										},
+									}
+									if aAddLocalizedNames then
+										for _, tLocale in pairs(aAddLocalizedNames) do
+											local tSubname = SkuDB.NpcData.Names[tLocale][i][2]
+											local tRolesString = ""
+											if not tSubname then
+												local tRoles = SkuNav:GetNpcRoles(v[1], i, tLocale)
+												if #tRoles > 0 then
+													for i, v in pairs(tRoles) do
+														tRolesString = tRolesString..";"..v
+													end
+													tRolesString = tRolesString..""
 												end
-												tRolesString = tRolesString..""
+											else
+												tRolesString = tRolesString..";"..tSubname
 											end
-										else
-											tRolesString = tRolesString..";"..tSubname
+											WaypointCache[tNewIndex][tLocale] = SkuDB.NpcData.Names[tLocale][i][1]..tRolesString..";"..tData.AreaName_lang[tLocale]..";"..sp..";"..vs[sp][1]..";"..vs[sp][2]
 										end
-										WaypointCache[tNewIndex][tLocale] = SkuDB.NpcData.Names[tLocale][i][1]..tRolesString..";"..tData.AreaName_lang[tLocale]..";"..sp..";"..vs[sp][1]..";"..vs[sp][2]
 									end
 								end
 							end
@@ -168,48 +173,50 @@ function SkuNav:CreateWaypointCache(aAddLocalizedNames)
 								local tNumberOfSpawns = #vs
 								for sp = 1, tNumberOfSpawns do
 									local _, worldPosition = C_Map.GetWorldPosFromMapPos(isUiMap, CreateVector2D(vs[sp][1] / 100, vs[sp][2] / 100))
-									local tWorldX, tWorldY = worldPosition:GetXY()
-	
-									local tNewIndex = #WaypointCache + 1
+									if worldPosition then
+										local tWorldX, tWorldY = worldPosition:GetXY()
+		
+										local tNewIndex = #WaypointCache + 1
 
-									local tRessourceType = ""
-									if SkuDB.objectResourceNames[Sku.Loc][v] == 1 then
-										tRessourceType = ";"..L["herbalism"]
-									elseif SkuDB.objectResourceNames[Sku.Loc][v] == 2 then
-										tRessourceType = ";"..L["mining"]
-									end
-
-
-									WaypointCacheLookupAll[L["OBJECT"]..";"..i..";"..v..tRessourceType..";"..tData.AreaName_lang[Sku.Loc]..";"..sp..";"..vs[sp][1]..";"..vs[sp][2]] = tNewIndex
-									if not WaypointCacheLookupPerContintent[tData.ContinentID] then
-										WaypointCacheLookupPerContintent[tData.ContinentID] = {}
-									end
-									WaypointCacheLookupPerContintent[tData.ContinentID][tNewIndex] = L["OBJECT"]..";"..i..";"..v..tRessourceType..";"..tData.AreaName_lang[Sku.Loc]..";"..sp..";"..vs[sp][1]..";"..vs[sp][2]
-									WaypointCache[tNewIndex] = {
-										name = L["OBJECT"]..";"..i..";"..v..tRessourceType..";"..tData.AreaName_lang[Sku.Loc]..";"..sp..";"..vs[sp][1]..";"..vs[sp][2],
-										role = "",
-										typeId = 3,
-										dbIndex = i,
-										contintentId = tData.ContinentID,
-										areaId = is,
-										uiMapId = isUiMap,
-										worldX = tWorldX,
-										worldY = tWorldY,
-										createdAt = GetTime(),
-										createdBy = "SkuNav",
-										size = 1,
-										spawnNr = sp,
-										links = {
-											byId = nil,
-											byName = nil,
-										},
-									}
-									if aAddLocalizedNames then
-										for _, tLocale in pairs(aAddLocalizedNames) do
-											WaypointCache[tNewIndex][tLocale] = tObjectTranslations[tLocale]..";"..i..";"..SkuDB.objectLookup[tLocale][i]..tRessourceType..";"..tData.AreaName_lang[tLocale]..";"..sp..";"..vs[sp][1]..";"..vs[sp][2]
+										local tRessourceType = ""
+										if SkuDB.objectResourceNames[Sku.Loc][v] == 1 then
+											tRessourceType = ";"..L["herbalism"]
+										elseif SkuDB.objectResourceNames[Sku.Loc][v] == 2 then
+											tRessourceType = ";"..L["mining"]
 										end
-									end									
 
+
+										WaypointCacheLookupAll[L["OBJECT"]..";"..i..";"..v..tRessourceType..";"..tData.AreaName_lang[Sku.Loc]..";"..sp..";"..vs[sp][1]..";"..vs[sp][2]] = tNewIndex
+										if not WaypointCacheLookupPerContintent[tData.ContinentID] then
+											WaypointCacheLookupPerContintent[tData.ContinentID] = {}
+										end
+										WaypointCacheLookupPerContintent[tData.ContinentID][tNewIndex] = L["OBJECT"]..";"..i..";"..v..tRessourceType..";"..tData.AreaName_lang[Sku.Loc]..";"..sp..";"..vs[sp][1]..";"..vs[sp][2]
+										WaypointCache[tNewIndex] = {
+											name = L["OBJECT"]..";"..i..";"..v..tRessourceType..";"..tData.AreaName_lang[Sku.Loc]..";"..sp..";"..vs[sp][1]..";"..vs[sp][2],
+											role = "",
+											typeId = 3,
+											dbIndex = i,
+											contintentId = tData.ContinentID,
+											areaId = is,
+											uiMapId = isUiMap,
+											worldX = tWorldX,
+											worldY = tWorldY,
+											createdAt = GetTime(),
+											createdBy = "SkuNav",
+											size = 1,
+											spawnNr = sp,
+											links = {
+												byId = nil,
+												byName = nil,
+											},
+										}
+										if aAddLocalizedNames then
+											for _, tLocale in pairs(aAddLocalizedNames) do
+												WaypointCache[tNewIndex][tLocale] = tObjectTranslations[tLocale]..";"..i..";"..SkuDB.objectLookup[tLocale][i]..tRessourceType..";"..tData.AreaName_lang[tLocale]..";"..sp..";"..vs[sp][1]..";"..vs[sp][2]
+											end
+										end									
+
+									end
 								end
 							end
 						end
@@ -353,32 +360,34 @@ function SkuNav:CreateWaypointCache(aAddLocalizedNames)
 
 							local isUiMap = SkuNav:GetUiMapIdFromAreaId(zone)
 							local _, worldPosition = C_Map.GetWorldPosFromMapPos(isUiMap, CreateVector2D(data[1][1] / 100, data[1][2] / 100))
-							local tWorldX, tWorldY = worldPosition:GetXY()
+							if worldPosition then
+								local tWorldX, tWorldY = worldPosition:GetXY()
 
-							local tNewIndex = #WaypointCache + 1
-							WaypointCacheLookupAll[tName] = tNewIndex									
-							if not WaypointCacheLookupPerContintent[tContintentId] then
-								WaypointCacheLookupPerContintent[tContintentId] = {}
+								local tNewIndex = #WaypointCache + 1
+								WaypointCacheLookupAll[tName] = tNewIndex									
+								if not WaypointCacheLookupPerContintent[tContintentId] then
+									WaypointCacheLookupPerContintent[tContintentId] = {}
+								end
+								WaypointCacheLookupPerContintent[tContintentId][tNewIndex] = tName
+								WaypointCache[tNewIndex] = {
+									name = tName,
+									role = "",
+									typeId = 4,
+									dbIndex = nil,
+									contintentId = tContintentId,
+									areaId = zone,
+									uiMapId = isUiMap,
+									worldX = tonumber(tWorldX),
+									worldY = tonumber(tWorldY),
+									createdAt = GetTime(),
+									createdBy = "SkuNav",
+									size = 1,
+									links = {
+										byId = nil,
+										byName = nil,
+									},
+								}
 							end
-							WaypointCacheLookupPerContintent[tContintentId][tNewIndex] = tName
-							WaypointCache[tNewIndex] = {
-								name = tName,
-								role = "",
-								typeId = 4,
-								dbIndex = nil,
-								contintentId = tContintentId,
-								areaId = zone,
-								uiMapId = isUiMap,
-								worldX = tonumber(tWorldX),
-								worldY = tonumber(tWorldY),
-								createdAt = GetTime(),
-								createdBy = "SkuNav",
-								size = 1,
-								links = {
-									byId = nil,
-									byName = nil,
-								},
-							}
 						end
 					end
 				end

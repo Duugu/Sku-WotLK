@@ -91,7 +91,8 @@ SkuStatus = {
 
 SkuCore.interactFramesListHooked = {}
 SkuCore.interactFramesListManual = {
-	["ContainerFrame1"] = function(...) SkuCore:Build_BagnonInventoryFrame(...) end,
+	["ContainerFrame1"] = function(...) SkuCore:Build_BagsFrame(...) end,
+	["BankFrame"] = function(...) SkuCore:Build_BankFrame(...) end,
 	--["BagnonBankFrame1"] = function(...) SkuCore:Build_BagnonBankFrame(...) end,
 	--["BagnonGuildFrame1"] = function(...) SkuCore:Build_BagnonGuildFrame(...) end,
 	["CraftFrame"] = function(...) SkuCore:Build_CraftFrame(...) end,
@@ -2207,12 +2208,12 @@ local friendlyFrameNames = {
 	["StaticPopup3"] = L["Popup 3"],
 	["PetStableFrame"] = L["Pet Stable"],
 	["MailFrame"] = L["Mail"],
-	["ContainerFrame1"] = L["Bag 1"],
-	["ContainerFrame2"] = L["Bag 2"],
-	["ContainerFrame3"] = L["Bag 3"],
-	["ContainerFrame4"] = L["Bag 4"],
-	["ContainerFrame5"] = L["Bag 5"],
-	["ContainerFrame6"] = L["Bag 6"],
+	["ContainerFrame1"] = L["local Bags"],
+	--["ContainerFrame2"] = L["Bag 2"],
+	--["ContainerFrame3"] = L["Bag 3"],
+	--["ContainerFrame4"] = L["Bag 4"],
+	--["ContainerFrame5"] = L["Bag 5"],
+	--["ContainerFrame6"] = L["Bag 6"],
 	["DropDownList2"] = L["Dropdown List 2"],
 	["DropDownList1"] = L["Dropdown List 1"],
 	["TalentFrame"] = L["Talents"],
@@ -2308,7 +2309,7 @@ local function ItemName_helper(aText)
 end
 
 ---------------------------------------------------------------------------------------------------------------------------------------
-local function IterateChildren(t, tab)
+function SkuCore:IterateChildren(t, tab)
 	local tResults = {}
 
 	if t.GetRegions then
@@ -2339,7 +2340,7 @@ local function IterateChildren(t, tab)
 						end
 					end
 
-					local tChildsResult = IterateChildren(dtc[x], tab.."  ")
+					local tChildsResult = SkuCore:IterateChildren(dtc[x], tab.."  ")
 					if #tChildsResult == 1 then
 						tResults[fName].childs = tChildsResult[tChildsResult[1]].childs
 					elseif #tChildsResult > 1 then
@@ -2483,7 +2484,7 @@ local function IterateChildren(t, tab)
 						if dtc[x] then
 							if not tResults[fName].func then
 								if (dtc[x]:GetNumRegions() + dtc[x]:GetNumChildren()) > 0 then
-									local tChildsResult = IterateChildren(dtc[x], tab.."  ")
+									local tChildsResult = SkuCore:IterateChildren(dtc[x], tab.."  ")
 									--if there is only one child, set its content directly to this item; except it's a money frame, then there may just one item
 									if #tChildsResult == 1 and not string.find(fName, "Money") then
 										tResults[fName].childs = tChildsResult[tChildsResult[1]].childs
@@ -2702,7 +2703,7 @@ function SkuCore:CheckFrames(aForceLocalRoot)
 					childs = {},
 					}
 				if not SkuCore.interactFramesListManual[tOpenFrames[x]] then
-					tGossipList[tOpenFrames[x]].childs = IterateChildren(tGossipList[tOpenFrames[x]].obj, "")
+					tGossipList[tOpenFrames[x]].childs = SkuCore:IterateChildren(tGossipList[tOpenFrames[x]].obj, "")
 				else
 					SkuCore.interactFramesListManual[tOpenFrames[x]](tGossipList[tOpenFrames[x]].childs)
 				end

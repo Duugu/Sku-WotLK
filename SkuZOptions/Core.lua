@@ -2545,14 +2545,14 @@ end
 ---@param aDuration number duration of the audio
 ---@param aDoNotOverride bool if this audio could be reseted by others
 function SkuOptions:VocalizeMultipartString(aStr, aReset, aWait, aDuration, aDoNotOverride, engine, aVocalizeAsIs)
-	--print("--VocalizeMultipartString", aStr)
+	--print("--VocalizeMultipartString", aStr, aReset, aWait, aDuration, aDoNotOverride, engine, aVocalizeAsIs)
 
 	-- don't vocalize object numbers
-	local tTempHayStack = string.gsub(aStr, L["OBJECT"]..";%d+;", L["OBJECT"]..";")
-	aStr = tTempHayStack
+	--local tTempHayStack = string.gsub(aStr, L["OBJECT"]..";%d+;", L["OBJECT"]..";")
+	--aStr = tTempHayStack
 
 	--if SkuOptions.db.profile["SkuOptions"].useBlizzTtsInMenu == true then
-	SkuOptions.Voice:OutputStringBTtts(aStr, aReset, aWait, 0.2, aDoNotOverride, false, nil, engine, nil, aVocalizeAsIs)
+	SkuOptions.Voice:OutputStringBTtts(aStr, aReset, aWait, 0.2, aDoNotOverride, false, nil, true, nil, aVocalizeAsIs)
 	return
 	--end
 --[[
@@ -2662,6 +2662,8 @@ function SkuOptions:VocalizeCurrentMenuName(aReset)
 		end
 	end
 
+	--print("SkuOptions:VocalizeMultipartString", tFinalString, aReset, true, nil, nil, SkuOptions.currentMenuPosition.ttsEngine, SkuOptions.currentMenuPosition.vocalizeAsIs)
+
 	SkuOptions:VocalizeMultipartString(tFinalString, aReset, true, nil, nil, SkuOptions.currentMenuPosition.ttsEngine, SkuOptions.currentMenuPosition.vocalizeAsIs)
 
 	--debug as text
@@ -2758,7 +2760,7 @@ local function SkuIterateGossipList(aGossipListTable, aParentMenuTable, aTab)
 
 
 					tNewMenuEntry.BuildChildren = function(self)
-						if (aGossipListTable[index].isBag and CursorHasItem()) or not aGossipListTable[index].isBag then
+						if ((aGossipListTable[index].isBag and CursorHasItem())) or not aGossipListTable[index].isBag or aGossipListTable[index].isPurchasable then
 							self.children = {}
 
 							local tNewSubMenuEntry = SkuOptions:InjectMenuItems(self, {L["Left click"]}, SkuGenericMenuItem)

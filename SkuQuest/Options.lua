@@ -239,53 +239,55 @@ local function CreatureIdHelper(aCreatureIds, aTargetTable, aOnly3)
 					if isUiMap then
 						local tData = SkuDB.InternalAreaTable[is]
 						if tData then
-							if tData.ContinentID == tPlayerContinentID then
-								local tNumberOfSpawns = #vs
-								if tNumberOfSpawns > 3 and aOnly3 == true then
-									tNumberOfSpawns = 3
-								end
-								if SkuDB.NpcData.Names[Sku.Loc][i] then
-									local tSubname = SkuDB.NpcData.Names[Sku.Loc][i][2]
-									local tRolesString = ""
-									if not tSubname then
-										local tRoles = SkuNav:GetNpcRoles(SkuDB.NpcData.Names[Sku.Loc][i], i)
-										if #tRoles > 0 then
-											for i, v in pairs(tRoles) do
-												tRolesString = tRolesString..";"..v
-											end
-											tRolesString = tRolesString..""
-										end
-									else
-										tRolesString = tRolesString..";"..tSubname
+							if SkuNav:GetContinentNameFromContinentId(tData.ContinentID) then
+								if tData.ContinentID == tPlayerContinentID then
+									local tNumberOfSpawns = #vs
+									if tNumberOfSpawns > 3 and aOnly3 == true then
+										tNumberOfSpawns = 3
 									end
-									for sp = 1, tNumberOfSpawns do
+									if SkuDB.NpcData.Names[Sku.Loc][i] then
+										local tSubname = SkuDB.NpcData.Names[Sku.Loc][i][2]
+										local tRolesString = ""
+										if not tSubname then
+											local tRoles = SkuNav:GetNpcRoles(SkuDB.NpcData.Names[Sku.Loc][i], i)
+											if #tRoles > 0 then
+												for i, v in pairs(tRoles) do
+													tRolesString = tRolesString..";"..v
+												end
+												tRolesString = tRolesString..""
+											end
+										else
+											tRolesString = tRolesString..";"..tSubname
+										end
+										for sp = 1, tNumberOfSpawns do
+											if not aTargetTable[SkuDB.NpcData.Names[Sku.Loc][i][1]..tRolesString] then
+												aTargetTable[SkuDB.NpcData.Names[Sku.Loc][i][1]..tRolesString] = {}
+											end
+											table.insert(aTargetTable[SkuDB.NpcData.Names[Sku.Loc][i][1]..tRolesString], SkuDB.NpcData.Names[Sku.Loc][i][1]..tRolesString..";"..tData.AreaName_lang[Sku.Loc]..";"..sp..";"..vs[sp][1]..";"..vs[sp][2])
+										end
+									end
+								else
+									if SkuDB.NpcData.Names[Sku.Loc][i] then
+										local tSubname = SkuDB.NpcData.Names[Sku.Loc][i][2]
+										local tRolesString = ""
+										if not tSubname then
+											local tRoles = SkuNav:GetNpcRoles(SkuDB.NpcData.Names[Sku.Loc][i], i)
+											if #tRoles > 0 then
+												for i, v in pairs(tRoles) do
+													tRolesString = tRolesString..";"..v
+												end
+												tRolesString = tRolesString..""
+											end
+										else
+											tRolesString = tRolesString..";"..tSubname
+										end
 										if not aTargetTable[SkuDB.NpcData.Names[Sku.Loc][i][1]..tRolesString] then
 											aTargetTable[SkuDB.NpcData.Names[Sku.Loc][i][1]..tRolesString] = {}
 										end
-										table.insert(aTargetTable[SkuDB.NpcData.Names[Sku.Loc][i][1]..tRolesString], SkuDB.NpcData.Names[Sku.Loc][i][1]..tRolesString..";"..tData.AreaName_lang[Sku.Loc]..";"..sp..";"..vs[sp][1]..";"..vs[sp][2])
+										table.insert(aTargetTable[SkuDB.NpcData.Names[Sku.Loc][i][1]..tRolesString], L["Anderer Kontinent"]..";"..SkuNav:GetContinentNameFromContinentId(tData.ContinentID)..";"..tData.AreaName_lang[Sku.Loc])
 									end
-								end
-							else
-								if SkuDB.NpcData.Names[Sku.Loc][i] then
-									local tSubname = SkuDB.NpcData.Names[Sku.Loc][i][2]
-									local tRolesString = ""
-									if not tSubname then
-										local tRoles = SkuNav:GetNpcRoles(SkuDB.NpcData.Names[Sku.Loc][i], i)
-										if #tRoles > 0 then
-											for i, v in pairs(tRoles) do
-												tRolesString = tRolesString..";"..v
-											end
-											tRolesString = tRolesString..""
-										end
-									else
-										tRolesString = tRolesString..";"..tSubname
-									end
-									if not aTargetTable[SkuDB.NpcData.Names[Sku.Loc][i][1]..tRolesString] then
-										aTargetTable[SkuDB.NpcData.Names[Sku.Loc][i][1]..tRolesString] = {}
-									end
-									table.insert(aTargetTable[SkuDB.NpcData.Names[Sku.Loc][i][1]..tRolesString], L["Anderer Kontinent"]..";"..SkuNav:GetContinentNameFromContinentId(tData.ContinentID)..";"..tData.AreaName_lang[Sku.Loc])
-								end
 
+								end
 							end
 						end
 					end
@@ -319,27 +321,29 @@ function SkuQuest:GetResultingWps(aSubIDTable, aSubType, aQuestID, tResultWPs, a
 									--if is == tCurrentAreaId then
 										local tData = SkuDB.InternalAreaTable[is]
 										if tData then
-											if tData.ContinentID == tPlayerContinentID then
-												local tNumberOfSpawns = #vs
-												if tNumberOfSpawns > 3 and aOnly3 == true then
-													tNumberOfSpawns = 3
-												end
-												for sp = 1, tNumberOfSpawns do
-													if not tResultWPs[tObjectName] then
-														tResultWPs[tObjectName] = {}
+											if SkuNav:GetContinentNameFromContinentId(tData.ContinentID) then
+												if tData.ContinentID == tPlayerContinentID then
+													local tNumberOfSpawns = #vs
+													if tNumberOfSpawns > 3 and aOnly3 == true then
+														tNumberOfSpawns = 3
 													end
-													table.insert(tResultWPs[tObjectName], L["OBJECT"]..";"..tObjectId..";"..tObjectName..";"..tData.AreaName_lang[Sku.Loc]..";"..sp..";"..vs[sp][1]..";"..vs[sp][2])
-												end
-											else
-												local tNumberOfSpawns = #vs
-												if tNumberOfSpawns > 3 and aOnly3 == true then
-													tNumberOfSpawns = 3
-												end
-												for sp = 1, tNumberOfSpawns do
-													if not tResultWPs[tObjectName] then
-														tResultWPs[tObjectName] = {}
+													for sp = 1, tNumberOfSpawns do
+														if not tResultWPs[tObjectName] then
+															tResultWPs[tObjectName] = {}
+														end
+														table.insert(tResultWPs[tObjectName], L["OBJECT"]..";"..tObjectId..";"..tObjectName..";"..tData.AreaName_lang[Sku.Loc]..";"..sp..";"..vs[sp][1]..";"..vs[sp][2])
 													end
-													table.insert(tResultWPs[tObjectName], L["Anderer Kontinent"]..";"..SkuNav:GetContinentNameFromContinentId(tData.ContinentID)..";"..tData.AreaName_lang[Sku.Loc])
+												else
+													local tNumberOfSpawns = #vs
+													if tNumberOfSpawns > 3 and aOnly3 == true then
+														tNumberOfSpawns = 3
+													end
+													for sp = 1, tNumberOfSpawns do
+														if not tResultWPs[tObjectName] then
+															tResultWPs[tObjectName] = {}
+														end
+														table.insert(tResultWPs[tObjectName], L["Anderer Kontinent"]..";"..SkuNav:GetContinentNameFromContinentId(tData.ContinentID)..";"..tData.AreaName_lang[Sku.Loc])
+													end
 												end
 											end
 										end

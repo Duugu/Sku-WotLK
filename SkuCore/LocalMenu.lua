@@ -150,9 +150,13 @@ local function getItemTooltipTextHelper(tooltipSetter)
 	end
 end
 
-local function getItemTooltipTextFromBagItem(bag, slot)
+local function getItemTooltipTextFromBagItem(bag, slot, itemId)
 	return getItemTooltipTextHelper(function(tooltip)
-		tooltip:SetBagItem(bag, slot)
+		if itemId then
+			tooltip:SetItemByID(itemId)
+		else
+			tooltip:SetBagItem(bag, slot)
+		end
 	end)
 end
 
@@ -266,193 +270,238 @@ function SkuCore:Build_BagnonGuildFrame(aParentChilds)
 end
 
 ---------------------------------------------------------------------------------------------------------------------------------------
-function SkuCore:Build_BagnonInventoryFrame(aParentChilds)
+function SkuCore:Build_BankFrame(aParentChilds)
+	--print("Build_BankFrame")
+	--ToggleAllBags() 
+end
 
-
-	if not _G["ContainerFrame6"] or _G["ContainerFrame6"]:IsShown() == false then
-		_G["KeyRingButton"]:Click()
+---------------------------------------------------------------------------------------------------------------------------------------
+local ContainerFrame1Hook
+function SkuCore:Build_BagsFrame(aParentChilds)
+	if not ContainerFrame1Hook then
+		hooksecurefunc(_G["ContainerFrame1"], "Hide", function()
+			for x = 2, 15 do
+				if _G["ContainerFrame"..x] then
+					_G["ContainerFrame"..x]:Hide()
+				end
+			end
+		end)
+		ContainerFrame1Hook = true
 	end
 
-
-
-
 	local tEmptyCounter = 1
-	local tCurrentBag
 	local tCurrentParentContainer = nil
 	local allBagResults = {}
 	local tBagResultsByBag = {}
 	local inventoryTooltipTextCache = {}
 
-	for frameNo = 1, 6 do
-		local tNumSlots = GetContainerNumSlots(frameNo - 1)
-		if frameNo == 6 then
-			tNumSlots = 12
+	local tBagSlotList = {
+		[0] = L["Bag"].." 1",
+		[1] = L["Bag"].." 2",
+		[2] = L["Bag"].." 3",
+		[3] = L["Bag"].." 4",
+		[4] = L["Bag"].." 5",
+		[-1] = L["Bank"],
+		[5] = L["Bank"].." "..L["Bag"].." 1",
+		[6] = L["Bank"].." "..L["Bag"].." 2",
+		[7] = L["Bank"].." "..L["Bag"].." 3",
+		[8] = L["Bank"].." "..L["Bag"].." 4",
+		[9] = L["Bank"].." "..L["Bag"].." 5",
+		[10] = L["Bank"].." "..L["Bag"].." 6",
+		[11] = L["Bank"].." "..L["Bag"].." 7",
+		[-2] = L["keyring"],
+		[-3] = L["Reagent bank"],
+	}
+
+	local tBagSlotListSorted = {
+		[1] = 0,
+		[2] = 1,
+		[3] = 2,
+		[4] = 3,
+		[5] = 4,
+		[6] = -1,
+		[7] = 5,
+		[8] = 6,
+		[9] = 7,
+		[10] = 8,
+		[11] = 9,
+		[12] = 10,
+		[13] = 11,
+		[14] = -2,
+		[15] = -3,
+	}
+
+	for i, v in pairs(tBagSlotList) do
+		if i ~= -1 and GetContainerNumSlots(i) > 0 then
+			if not IsBagOpen(i) then
+				--print("----", i, v, OpenBag(i))
+				OpenBag(i)
+			end
 		end
-		for itemNo = 1, tNumSlots do
-			local containerFrameName = "ContainerFrame" .. frameNo .. "Item" .. itemNo
+	end
+
+	--for bagId = -3, 11 do
+	for q = 1, #tBagSlotListSorted do
+		local bagId = tBagSlotListSorted[q]
+		--print(bagId, IsBagOpen(bagId))
+		local tCurrentContainerFrameNumber = IsBagOpen(bagId)
+		local tNumSlots = GetContainerNumSlots(bagId)
+		for slotId = 1, tNumSlots do
+			--print("bagId", bagId, "slotId", slotId)
+			local containerFrameName = ""
+			if tCurrentContainerFrameNumber then
+				containerFrameName = "ContainerFrame"..(tCurrentContainerFrameNumber).."Item"..(tNumSlots - slotId + 1)
+			end
+			if bagId == -1 and _G["BankFrame"] and _G["BankFrame"]:IsVisible() == true then
+				tCurrentContainerFrameNumber = -1
+				containerFrameName = "BankFrameItem"..slotId
+			end
+
 			local containerFrame = _G[containerFrameName]
 			if containerFrame then
-				--if containerFrame.GetBag then
-					if frameNo >= 0 then
-						local bagId = frameNo
-						local slotId = itemNo
+				if not tBagResultsByBag[tCurrentContainerFrameNumber] then
+					local bagName = tBagSlotList[bagId] --L["Bag"] .. " " .. (tCurrentContainerFrameNumber)
+					table.insert(aParentChilds, bagName)
+					aParentChilds[bagName] = {
+						frameName = containerFrameName,
+						RoC = "Child",
+						type = "Button",
+						obj = containerFrame,
+						textFirstLine = bagName,
+						textFull = "",
+						noMenuNumbers = true,
+						childs = {},
+					}   
 
-						if bagId > 0 then
-							tCurrentBag = bagId
-							if not tBagResultsByBag[bagId] then
+					tBagResultsByBag[(tCurrentContainerFrameNumber)] = { obj = aParentChilds[bagName], childs = {} }
+				end
 
-								local bagName = L["Bag"] .. " " .. bagId
-								table.insert(aParentChilds, bagName)
-								aParentChilds[bagName] = {
-									frameName = containerFrameName,
-									RoC = "Child",
-									type = "Button",
-									obj = containerFrame,
-									textFirstLine = bagName,
-									textFull = "",
-									noMenuNumbers = true,
-									childs = {},
-								}   
+				local tFriendlyName = L["Bag"] .. (tCurrentContainerFrameNumber) .. "-" .. slotId
+				local tText = L["Empty"]
+				local isEmpty = true
+				local bagItemButton
 
-								tBagResultsByBag[bagId] = { obj = aParentChilds[bagName], childs = {} }
-							end
+				--update blizzard container object
+				containerFrame.GetBag = function() 
+					return bagId
+				end
+				containerFrame.info = containerFrame.info or {}
+				containerFrame.info.id = GetContainerItemID(bagId, slotId)
+				local _, itemCount = GetContainerItemInfo(bagId, slotId)
+				containerFrame.info.count = itemCount
+
+				if containerFrame:IsEnabled() == true then
+					aParentChilds[tFriendlyName] = {
+						frameName = containerFrameName,
+						RoC = "Child",
+						type = "Button",
+						obj = containerFrame,
+						textFirstLine = tText,
+						textFull = "",
+						noMenuNumbers = true,
+						childs = {},
+						isNewItem = C_NewItems.IsNewItem(bagId, slotId),
+					}   
+					bagItemButton = aParentChilds[tFriendlyName]
+					--get the onclick func if there is one
+					if bagItemButton.obj:IsMouseClickEnabled() == true then
+						if bagItemButton.obj:GetObjectType() == "Button" then
+							bagItemButton.func = bagItemButton.obj:GetScript("OnClick")
 						end
+						bagItemButton.containerFrameName = containerFrameName
+						bagItemButton.onActionFunc = function(self, aTable, aChildName)
 
-						local tFriendlyName = L["Bag"] .. bagId .. "-" .. slotId
-						local tText = L["Empty"]
-						local isEmpty = true
-						local bagItemButton
-
-						--update blizzard container object
-						containerFrame.GetBag = function() 
-							return bagId - 1
 						end
-						containerFrame.GetID = function()
-							return tNumSlots - slotId + 1
+						if bagItemButton.func then
+							bagItemButton.click = true
 						end
-						containerFrame.info = containerFrame.info or {}
-						containerFrame.info.id = GetContainerItemID(bagId - 1, tNumSlots - slotId + 1)
-						local _, itemCount = GetContainerItemInfo(bagId - 1, tNumSlots - slotId + 1)
-						containerFrame.info.count = itemCount
-
-						if containerFrame:IsEnabled() == true then
-							aParentChilds[tFriendlyName] = {
-								frameName = containerFrameName,
-								RoC = "Child",
-								type = "Button",
-								obj = containerFrame,
-								textFirstLine = tText,
-								textFull = "",
-								noMenuNumbers = true,
-								childs = {},
-								isNewItem = C_NewItems.IsNewItem(bagId - 1, tNumSlots - slotId + 1),
-							}   
-							bagItemButton = aParentChilds[tFriendlyName]
-							--get the onclick func if there is one
-							if bagItemButton.obj:IsMouseClickEnabled() == true then
-								if bagItemButton.obj:GetObjectType() == "Button" then
-									bagItemButton.func = bagItemButton.obj:GetScript("OnClick")
-								end
-								bagItemButton.containerFrameName = containerFrameName
-								bagItemButton.onActionFunc = function(self, aTable, aChildName)
-
-								end
-								if bagItemButton.func then
-									bagItemButton.click = true
-								end
-							end
-
-
-							local maybeText = getItemTooltipTextFromBagItem(bagItemButton.obj:GetParent():GetID(), bagItemButton.obj:GetID())
-							if maybeText then
-								local tText = maybeText
-								isEmpty = false
-									
-								if bagItemButton.obj.info then
-									if bagItemButton.obj.info.id then
-										bagItemButton.itemId = bagItemButton.obj.info.id
-										bagItemButton.textFirstLine = ItemName_helper(tText)
-										bagItemButton.textFull = SkuCore:AuctionPriceHistoryData(bagItemButton.obj.info.id, true, true)
-										end
-									end
-								if not bagItemButton.textFull then
-									bagItemButton.textFull = {}
-									end
-									local tFirst, tFull = ItemName_helper(tText)
-								bagItemButton.textFirstLine = tFirst
-								if type(bagItemButton.textFull) ~= "table" then
-									bagItemButton.textFull = { (bagItemButton.textFull or bagItemButton.textFirstLine or ""), }
-									end
-								table.insert(bagItemButton.textFull, 1, tFull)
-								local itemId = bagItemButton.itemId
-								if itemId and IsEquippableItem(itemId) then
-									local comparisnSections = getItemComparisnSections(itemId, inventoryTooltipTextCache)
-									if comparisnSections then
-										for i, section in ipairs(comparisnSections) do
-											local sectionHeader = #comparisnSections > 1 and L["currently equipped"].." "..i.."\r\n" or L["currently equipped"].."\r\n"
-											table.insert(bagItemButton.textFull, i + 1, sectionHeader .. section)
-										end
-									end
-								end
-							end
-
-							if bagItemButton.textFirstLine == "" and bagItemButton.textFull == "" and bagItemButton.obj.ShowTooltip then
-								GameTooltip:ClearLines()
-								bagItemButton.obj:ShowTooltip()
-								if TooltipLines_helper(GameTooltip:GetRegions()) ~= "asd" then
-									if TooltipLines_helper(GameTooltip:GetRegions()) ~= "" then
-										local tText = unescape(TooltipLines_helper(GameTooltip:GetRegions()))
-										bagItemButton.textFirstLine, bagItemButton.textFull = ItemName_helper(tText)
-										isEmpty = false
-									end
-								end
-							end
-							
-							
-
-							if _G[containerFrameName .. "Count"] and not containerFrame.info then
-								if bagItemButton and _G[containerFrameName .. "Count"]:GetText() then
-									if not isEmpty then
-										bagItemButton.textFirstLine = bagItemButton.textFirstLine .. " " .. _G[containerFrameName .. "Count"]:GetText()
-									end
-								end
-							end
-							if bagItemButton and string.find(containerFrameName, "ContainerFrame") then
-								if bagItemButton.textFirstLine then
-									bagItemButton.textFirstLine = (#tBagResultsByBag[bagId].childs + 1) .. " " .. bagItemButton.textFirstLine
-									tEmptyCounter = tEmptyCounter + 1
-								end
-							end
-							if _G[containerFrameName .. "Count"] and bagItemButton then
-								bagItemButton.stackSize = _G[containerFrameName .. "Count"]:GetText()
-							end
-							if containerFrame.info then
-								bagItemButton.itemId = containerFrame.info.id
-								if not containerFrame.info.count then
-									bagItemButton.textFirstLine = bagItemButton.textFirstLine
-								else
-									if not isEmpty and containerFrame.info.count > 1 then
-										bagItemButton.textFirstLine = bagItemButton.textFirstLine .. " " .. containerFrame.info.count
-									end
-								end								
-							end							
-						end
-						
-						tBagResultsByBag[bagId].childs[#tBagResultsByBag[bagId].childs + 1] = bagItemButton
-						-- if the item slot isn't empty, add it to allBagResults
-						if not isEmpty then
-							-- create a copy that doesn't have the numbering in textFirstLine
-							copy = {}
-							for k, v in pairs(bagItemButton) do
-								copy[k] = v
-							end
-							copy.textFirstLine = string.sub(copy.textFirstLine, string.find(copy.textFirstLine, " ") + 1)
-							table.insert(allBagResults, copy)
-							allBagResults[copy] = copy
-						end
-
 					end
-				--end
+
+					local maybeText = getItemTooltipTextFromBagItem(bagItemButton.obj:GetParent():GetID(), bagItemButton.obj:GetID(), bagItemButton.obj.info.id)
+					if maybeText then
+						local tText = maybeText
+						isEmpty = false
+						if bagItemButton.obj.info then
+							if bagItemButton.obj.info.id then
+								bagItemButton.itemId = bagItemButton.obj.info.id
+								bagItemButton.textFirstLine = ItemName_helper(tText)
+								bagItemButton.textFull = SkuCore:AuctionPriceHistoryData(bagItemButton.obj.info.id, true, true)
+							end
+						end
+						if not bagItemButton.textFull then
+							bagItemButton.textFull = {}
+						end
+						local tFirst, tFull = ItemName_helper(tText)
+						bagItemButton.textFirstLine = tFirst
+						if type(bagItemButton.textFull) ~= "table" then
+							bagItemButton.textFull = { (bagItemButton.textFull or bagItemButton.textFirstLine or ""), }
+						end
+						table.insert(bagItemButton.textFull, 1, tFull)
+						local itemId = bagItemButton.itemId
+						if itemId and IsEquippableItem(itemId) then
+							local comparisnSections = getItemComparisnSections(itemId, inventoryTooltipTextCache)
+							if comparisnSections then
+								for i, section in ipairs(comparisnSections) do
+									local sectionHeader = #comparisnSections > 1 and L["currently equipped"].." "..i.."\r\n" or L["currently equipped"].."\r\n"
+									table.insert(bagItemButton.textFull, i + 1, sectionHeader .. section)
+								end
+							end
+						end
+					end
+
+					if bagItemButton.textFirstLine == "" and bagItemButton.textFull == "" and bagItemButton.obj.ShowTooltip then
+						GameTooltip:ClearLines()
+						bagItemButton.obj:ShowTooltip()
+						if TooltipLines_helper(GameTooltip:GetRegions()) ~= "asd" then
+							if TooltipLines_helper(GameTooltip:GetRegions()) ~= "" then
+								local tText = unescape(TooltipLines_helper(GameTooltip:GetRegions()))
+								bagItemButton.textFirstLine, bagItemButton.textFull = ItemName_helper(tText)
+								isEmpty = false
+							end
+						end
+					end
+					
+					if _G[containerFrameName .. "Count"] and not containerFrame.info then
+						if bagItemButton and _G[containerFrameName .. "Count"]:GetText() then
+							if not isEmpty then
+								bagItemButton.textFirstLine = bagItemButton.textFirstLine .. " " .. _G[containerFrameName .. "Count"]:GetText()
+							end
+						end
+					end
+					if bagItemButton and (string.find(containerFrameName, "ContainerFrame") or string.find(containerFrameName, "BankFrameItem") )then
+						if bagItemButton.textFirstLine then
+							bagItemButton.textFirstLine = (#tBagResultsByBag[(tCurrentContainerFrameNumber)].childs + 1) .. " " .. bagItemButton.textFirstLine
+							tEmptyCounter = tEmptyCounter + 1
+						end
+					end
+					if _G[containerFrameName .. "Count"] and bagItemButton then
+						bagItemButton.stackSize = _G[containerFrameName .. "Count"]:GetText()
+					end
+					if containerFrame.info then
+						bagItemButton.itemId = containerFrame.info.id
+						if not containerFrame.info.count then
+							bagItemButton.textFirstLine = bagItemButton.textFirstLine
+						else
+							if not isEmpty and containerFrame.info.count > 1 then
+								bagItemButton.textFirstLine = bagItemButton.textFirstLine .. " " .. containerFrame.info.count
+							end
+						end								
+					end							
+				end
+				
+				tBagResultsByBag[(tCurrentContainerFrameNumber)].childs[#tBagResultsByBag[(tCurrentContainerFrameNumber)].childs + 1] = bagItemButton
+				-- if the item slot isn't empty, add it to allBagResults
+				if not isEmpty then
+					-- create a copy that doesn't have the numbering in textFirstLine
+					copy = {}
+					for k, v in pairs(bagItemButton) do
+						copy[k] = v
+					end
+					copy.textFirstLine = string.sub(copy.textFirstLine, string.find(copy.textFirstLine, " ") + 1)
+					table.insert(allBagResults, copy)
+					allBagResults[copy] = copy
+				end
+				
 			end
 		end  
 	end
@@ -494,7 +543,6 @@ function SkuCore:Build_BagnonInventoryFrame(aParentChilds)
 			childs = allBagResults,
 		}
 	end
-
 
 	local tFriendlyName = L["Bags"]
 	table.insert(aParentChilds, tFriendlyName)
@@ -550,21 +598,91 @@ function SkuCore:Build_BagnonInventoryFrame(aParentChilds)
 				if TooltipLines_helper(GameTooltip:GetRegions()) ~= "asd" then
 					if TooltipLines_helper(GameTooltip:GetRegions()) ~= "" then
 						local tText = unescape(TooltipLines_helper(GameTooltip:GetRegions()))
+						--[[
 						if string.find(tText, "Equip Container") then
 							tText = L["Empty"]
 						end
+						]]
 						tText = x.." "..tText
 						aParentChilds[tFriendlyName].textFirstLine, aParentChilds[tFriendlyName].textFull = ItemName_helper(tText)
 					end
 				end
 			end
-			
 
 			table.insert(tCurrentParentContainer.childs, aParentChilds[tFriendlyName])
 			tCurrentParentContainer.childs[aParentChilds[tFriendlyName] ] = aParentChilds[tFriendlyName]
 		end
 	end    
 	
+	if _G["BankSlotsFrame"] and _G["BankSlotsFrame"].Bag1:IsVisible() == true then
+		local numPurBankSlots, fullBankSlots = GetNumBankSlots()
+		local costForNextPur = GetBankSlotCost(numPurBankSlots)
+
+		for x = 1, numPurBankSlots do
+			local containerFrameName = "Bag"..x
+			local tFriendlyName = ""--"Bank Bag slot".." "..(x)
+			if _G["BankSlotsFrame"]["Bag"..x]:IsEnabled() == true then
+
+
+				--local tText = _G["BankSlotsFrame"]["Bag"..x].tooltipText
+				--print(x, tText)--Purchasable
+
+				aParentChilds[tFriendlyName] = {
+					frameName = "BankSlotsFrame.Bag"..x,
+					RoC = "Child",
+					type = "Button",
+					obj = _G["BankSlotsFrame"]["Bag"..x],
+					textFirstLine = tFriendlyName,
+					textFull = "",
+					noMenuNumbers = true,
+					childs = {},
+					func = _G["BankSlotsFrame"]["Bag"..x]:GetScript("OnClick"),
+					click = true,
+					isBag = true,
+				}   
+
+				GameTooltip:ClearLines()
+				aParentChilds[tFriendlyName].obj:GetScript("OnEnter")(aParentChilds[tFriendlyName].obj)
+				if TooltipLines_helper(GameTooltip:GetRegions()) ~= "asd" then
+					if TooltipLines_helper(GameTooltip:GetRegions()) ~= "" then
+						local tText = unescape(TooltipLines_helper(GameTooltip:GetRegions()))
+						tText = x.." "..tText
+						aParentChilds[tFriendlyName].textFirstLine, aParentChilds[tFriendlyName].textFull = ItemName_helper(tText)
+						aParentChilds[tFriendlyName].textFirstLine = L["Bank"].. " "..aParentChilds[tFriendlyName].textFirstLine
+					end
+				end
+			end
+
+			table.insert(tCurrentParentContainer.childs, aParentChilds[tFriendlyName])
+			tCurrentParentContainer.childs[aParentChilds[tFriendlyName] ] = aParentChilds[tFriendlyName]
+		end  	
+
+		if fullBankSlots ~= true then
+			local cost = SkuGetCoinText(GetBankSlotCost(numPurBankSlots))
+			local x = numPurBankSlots + 1
+			local containerFrameName = "Bag"..x
+			local tFriendlyName = L["Bank"].." "..x.." ".._G["BankSlotsFrame"]["Bag"..x].tooltipText.." "..cost
+			if _G["BankSlotsFrame"]["Bag"..x]:IsEnabled() == true then
+				aParentChilds[tFriendlyName] = {
+					frameName = "BankSlotsFrame.Bag"..x,
+					RoC = "Child",
+					type = "Button",
+					obj = _G["BankSlotsFrame"]["Bag"..x],
+					textFirstLine = tFriendlyName,
+					textFull = "",
+					noMenuNumbers = true,
+					childs = {},
+					func = PurchaseSlot,
+					click = true,
+					isBag = true,
+					isPurchasable = true,
+				}   
+			end
+
+			table.insert(tCurrentParentContainer.childs, aParentChilds[tFriendlyName])
+			tCurrentParentContainer.childs[aParentChilds[tFriendlyName] ] = aParentChilds[tFriendlyName]
+		end
+	end
 end
 
 ---------------------------------------------------------------------------------------------------------------------------------------
@@ -760,15 +878,14 @@ function SkuCore:Build_ItemSocketingFrame(aParentChilds)
 	
 	end
 
-	--if _G[tFrameName]:IsVisible() == true and _G[tFrameName]:IsEnabled() == true then --IsMouseClickEnabled()
-	local tFriendlyName = "Edelsteine Sockeln"
+	local tFriendlyName = _G["ItemSocketingSocketButton"]:GetText()
 	local tFrameName = "ItemSocketingSocketButton"
 	local tFunc = function(self, aButton)
 		self:GetScript("OnClick")(self, aButton)             
 		self:GetScript("OnClick")(self, aButton)             
 	end
 	if _G[tFrameName]:IsEnabled() ~= true then
-		tFriendlyName = tFriendlyName.." (Deaktiviert)"
+		tFriendlyName = tFriendlyName.." ("..L["disabled"]..")"
 		tFunc = nil
 	end
 	table.insert(aParentChilds, tFriendlyName)
@@ -785,14 +902,14 @@ function SkuCore:Build_ItemSocketingFrame(aParentChilds)
 	}   
 
 
-	local tFriendlyName = "Schließen"
+	local tFriendlyName = L["Close"]
 	local tFrameName = "ItemSocketingCloseButton"
 	local tFunc = function(self, aButton)
 		self:GetScript("OnClick")(self, aButton)             
 		self:GetScript("OnClick")(self, aButton)             
 	end
 	if _G[tFrameName]:IsEnabled() ~= true then
-		tFriendlyName = tFriendlyName.." (Deaktiviert)"
+		tFriendlyName = tFriendlyName.." ("..L["disabled"]..")"
 		tFunc = nil
 	end
 	table.insert(aParentChilds, tFriendlyName)
@@ -1002,7 +1119,7 @@ function SkuCore:Build_ClassTrainerFrame(aParentChilds)
 
 
 	local tFrameName = "ClassTrainerCancelButton"
-	local tFriendlyName = L["Schließen"]
+	local tFriendlyName = L["Close"]
 	if _G[tFrameName]:IsEnabled() == true then --IsMouseClickEnabled()
 		table.insert(aParentChilds, tFriendlyName)
 		aParentChilds[tFriendlyName] = {

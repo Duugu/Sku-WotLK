@@ -1527,3 +1527,6 @@ L["TTS alternative voice"] = "TTS alternative voice"
 
 L["socket"] = "socket"
 L["current gem:"] = "current gem:"
+
+L["keyring"] = "keyring"
+L["Reagent bank"] = "Reagent bank"
